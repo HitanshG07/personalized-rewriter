@@ -55,7 +55,7 @@ $Scenarios = @{
 }
 
 function Say($msg, $color = "Cyan") { Write-Host $msg -ForegroundColor $color }
-function Git { & git @args; if ($LASTEXITCODE -ne 0) { throw "git $args failed" } }
+function GitOk { & git.exe @args; if ($LASTEXITCODE -ne 0) { throw "git $args failed" } }
 function Read-Text($path) { [IO.File]::ReadAllText((Join-Path $Root $path)).Replace("`r`n", "`n") }
 function Write-Text($path, $text) { [IO.File]::WriteAllText((Join-Path $Root $path), $text.Replace("`r`n", "`n"), $Utf8) }
 function Run-Python($code) { $code | & $Python - }
@@ -108,7 +108,7 @@ function Apply-Fix {
             return "Fix: back up the database with shutil.copy2 instead of a shell command"
         }
         "trivy" {
-            Git checkout origin/main -- Dockerfile
+            GitOk checkout origin/main -- Dockerfile
             return "Fix: apply the AI-recommended, developer-verified Dockerfile (slim base, non-root, multi-stage)"
         }
     }
@@ -150,7 +150,7 @@ try {
             gh auth status 2>$null | Out-Null
             if ($LASTEXITCODE -ne 0) { throw "Not logged in to GitHub. Run: gh auth login" }
             Assert-Clean
-            Git fetch -q origin
+            GitOk fetch -q origin
             $main = (gh run list --branch main --limit 1 --json conclusion | ConvertFrom-Json)[0].conclusion
             Say "main pipeline : $main" $(if ($main -eq "success") { "Green" } else { "Red" })
             $open = (gh pr list --state open --json headRefName | ConvertFrom-Json).headRefName -join ", "
@@ -168,14 +168,14 @@ print(f"AI calls today: {d['used']} used, {d['remaining']} left of {d['limit']}"
         "break" {
             Assert-Scenario; Assert-Clean
             if (Open-Pr) { throw "$(Branch) already has an open PR. Use 'fix' or 'close'." }
-            Git fetch -q origin
+            GitOk fetch -q origin
             git branch -D (Branch) 2>$null | Out-Null
-            Git switch -q -c (Branch) origin/main
+            GitOk switch -q -c (Branch) origin/main
             try {
                 Apply-Break
-                Git add -A app Dockerfile
-                Git commit -q -m $Scenarios[$Scenario].Title
-                Git push -q -f -u origin (Branch)
+                GitOk add -A app Dockerfile
+                GitOk commit -q -m $Scenarios[$Scenario].Title
+                GitOk push -q -f -u origin (Branch)
             } finally { git switch -q main }
             gh pr create --head (Branch) --base main --title $Scenarios[$Scenario].Title --body "Live demo scenario $Scenario. Expected to fail at: $($Scenarios[$Scenario].FailsAt). Never merged." | Out-Null
             Say "Pushed a failing change on $(Branch). Expected to fail at: $($Scenarios[$Scenario].FailsAt)" "Yellow"
@@ -186,14 +186,14 @@ print(f"AI calls today: {d['used']} used, {d['remaining']} left of {d['limit']}"
         "fix" {
             Assert-Scenario; Assert-Clean
             if (-not (Open-Pr)) { throw "No open PR for $(Branch). Run: .\scripts\demo.ps1 break $Scenario" }
-            Git fetch -q origin
-            Git switch -q (Branch)
+            GitOk fetch -q origin
+            GitOk switch -q (Branch)
             try {
-                Git reset -q --hard "origin/$(Branch)"
+                GitOk reset -q --hard "origin/$(Branch)"
                 $msg = Apply-Fix
-                Git add -A app Dockerfile
-                Git commit -q -m $msg
-                Git push -q origin (Branch)
+                GitOk add -A app Dockerfile
+                GitOk commit -q -m $msg
+                GitOk push -q origin (Branch)
             } finally { git switch -q main }
             Say "Pushed the fix: $msg" "Yellow"
             Wait-Run
