@@ -1,3 +1,4 @@
+# Security baseline (day one) - never in the build context
 .env
 .git
 .gitignore
@@ -5,3 +6,17 @@ __pycache__
 .venv
 data/
 docs/evidence/
+
+# Deliverable B (AI-recommended, developer-accepted): not needed to build or run the image,
+# which only uses requirements.txt and app/
+docs/
+tests/
+ai_tools/
+evaluation/
+k8s/
+monitoring/
+.github/
+.pytest_cache/
+README.md
+requirements-dev.txt
+.env.example
