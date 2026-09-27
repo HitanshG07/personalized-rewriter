@@ -202,7 +202,7 @@ print(f"AI calls today: {d['used']} used, {d['remaining']} left of {d['limit']}"
             Assert-Scenario
             $pr = Open-Pr
             if ($pr) {
-                gh pr comment $pr --body "Demo complete: failure diagnosed by the DevOps AI, fix verified green. Closed without merging by design." | Out-Null
+                gh pr comment $pr --body "Demo complete: failure shown, fix verified green in CI. Closed without merging by design." | Out-Null
                 gh pr close $pr --delete-branch 2>$null | Out-Null
                 Say "Closed PR #$pr and deleted $(Branch)." "Green"
             } else { Say "No open PR for $(Branch)." }

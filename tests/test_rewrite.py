@@ -1,3 +1,4 @@
+import pytest
 import httpx
 
 from app import llm_client
@@ -116,3 +117,20 @@ def test_extra_body_is_sent(openrouter, monkeypatch):
     llm_client.chat([{"role": "user", "content": "hi"}], model="m", temperature=0, max_tokens=5,
                     extra_body={"reasoning": {"enabled": False}})
     assert openrouter.calls[0]["reasoning"] == {"enabled": False}
+
+
+def test_error_inside_200_is_retried(with_sample, openrouter):
+    openrouter.queue = [httpx.Response(200, json={"error": {"message": "upstream overloaded"}}), ok_response()]
+    assert rewrite(with_sample).status_code == 200
+    assert len(openrouter.calls) == 2
+
+
+def test_invalid_answer_retried_only_when_asked(openrouter, monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-not-real")
+    msgs = [{"role": "user", "content": "hi"}]
+    openrouter.queue = [ok_response(text=""), ok_response()]
+    assert llm_client.chat(msgs, model="m", temperature=0, max_tokens=5, retry_invalid=True, retry_delay_s=0).text
+    assert len(openrouter.calls) == 2
+    openrouter.queue = [ok_response(text="")]
+    with pytest.raises(llm_client.LLMError):
+        llm_client.chat(msgs, model="m", temperature=0, max_tokens=5, retry_delay_s=0)

@@ -175,6 +175,7 @@ def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
             fallback_models=fallbacks, attempts=3, retry_delay_s=5,
             # thinking models otherwise spend the whole budget on hidden reasoning and return empty content
             extra_body={"reasoning": {"enabled": False}},
+            retry_invalid=True,  # free models occasionally return an empty answer; try again / next model
         )
     except LLMError as e:
         return {**record, "error": e.reason, "output": None}
