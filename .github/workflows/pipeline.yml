@@ -1,4 +1,4 @@
-name: pipeline
+﻿name: pipeline
 
 # PRs to main + pushes to main only: one run per change, so a failure costs at most one AI diagnosis
 # (free OpenRouter tier = 50 calls/day).
@@ -17,7 +17,7 @@ env:
   TRIVY_VERSION: "0.74.0"
 
 # Every job: step output is tee'd to $RUNNER_TEMP/raw (never uploaded); a final always() step sanitizes
-# it into logs/ and only logs/ is uploaded (PROJECT_PLAN §6.1).
+# it into logs/ and only logs/ is uploaded (PROJECT_PLAN Â§6.1).
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -155,6 +155,7 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
       ANALYZER_MODEL: ${{ vars.ANALYZER_MODEL }}
+      ANALYZER_FALLBACK_MODELS: ${{ vars.ANALYZER_FALLBACK_MODELS }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

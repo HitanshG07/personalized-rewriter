@@ -153,11 +153,15 @@ def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
     from app.llm_client import LLMError, chat
 
     model = model or os.getenv("ANALYZER_MODEL") or os.getenv("OPENROUTER_MODEL", "")
-    record = {"prompt_version": prompt_version, "model_requested": model}
+    # Availability over reproducibility here: free models get throttled upstream, so the DevOps AI retries with
+    # backoff and may fall back to other free models. (Formal evaluation never uses fallback - PROJECT_PLAN D13.)
+    fallbacks = [m.strip() for m in os.getenv("ANALYZER_FALLBACK_MODELS", "").split(",") if m.strip()]
+    record = {"prompt_version": prompt_version, "model_requested": model, "fallback_models": fallbacks}
     try:
         r = chat(
             [{"role": "system", "content": PROMPTS[prompt_version]}, {"role": "user", "content": user_content}],
             model=model, temperature=0.2, max_tokens=1200, timeout_s=90,
+            fallback_models=fallbacks, attempts=3, retry_delay_s=5,
         )
     except LLMError as e:
         return {**record, "error": e.reason, "output": None}
