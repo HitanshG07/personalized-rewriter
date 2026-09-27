@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personalized Rewriter</title>
+<style>
+  :root { --bg: #f7f7f5; --card: #fff; --ink: #1d1d1f; --muted: #6b6b70; --line: #d9d9de; --accent: #2f5bea; --err: #b3261e; --ok: #1e7b3a; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151517; --card: #1f1f22; --ink: #ececef; --muted: #a0a0a8; --line: #36363c; --accent: #7d9bff; --err: #ff8a80; --ok: #7fd18f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 24px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  input, textarea { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: inherit; font: inherit; }
+  textarea { min-height: 120px; resize: vertical; }
+  button { margin-top: 10px; padding: 10px 16px; border: 0; border-radius: 8px; background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .6; cursor: progress; }
+  .status { margin-top: 8px; min-height: 1.5em; font-size: .9rem; }
+  .status.err { color: var(--err); } .status.ok { color: var(--ok); }
+  #result { white-space: pre-wrap; min-height: 3em; }
+  .meta { color: var(--muted); font-size: .85rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Personalized Rewriter</h1>
+  <p class="lead">Save a sample of how you write, then turn rough notes into text in your own style.</p>
+
+  <section>
+    <label for="user">User ID</label>
+    <input id="user" autocomplete="off" placeholder="e.g. hitansh" pattern="[A-Za-z0-9_-]{1,64}">
+  </section>
+
+  <section>
+    <label for="sample">Your writing sample</label>
+    <textarea id="sample" placeholder="Paste something you wrote before (at least 50 characters)…"></textarea>
+    <button id="save">Save Writing Style</button>
+    <div id="save-status" class="status" role="status"></div>
+  </section>
+
+  <section>
+    <label for="notes">Rough notes</label>
+    <textarea id="notes" placeholder="meeting moved to friday&#10;report due monday&#10;inform team"></textarea>
+    <button id="rewrite">Rewrite</button>
+    <div id="rewrite-status" class="status" role="status"></div>
+  </section>
+
+  <section aria-live="polite">
+    <label>Result</label>
+    <div id="result"></div>
+    <div id="meta" class="meta"></div>
+  </section>
+</main>
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function errorText(body, status) {
+    if (typeof body?.detail === "string") return body.detail;
+    if (Array.isArray(body?.detail)) return body.detail.map((d) => `${d.loc.at(-1)}: ${d.msg}`).join("; ");
+    return `Request failed (${status}).`;
+  }
+
+  async function call(path, payload, button, statusEl) {
+    button.disabled = true;
+    statusEl.className = "status";
+    statusEl.textContent = "Working…";
+    try {
+      const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(errorText(body, res.status));
+      statusEl.textContent = "";
+      return body;
+    } catch (e) {
+      statusEl.className = "status err";
+      statusEl.textContent = e.message;
+      return null;
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  $("save").onclick = async () => {
+    const body = await call("/sample", { user_id: $("user").value.trim(), sample: $("sample").value }, $("save"), $("save-status"));
+    if (body) { $("save-status").className = "status ok"; $("save-status").textContent = `Saved (${body.chars} characters).`; }
+  };
+
+  $("rewrite").onclick = async () => {
+    $("result").textContent = ""; $("meta").textContent = "";
+    const body = await call("/rewrite", { user_id: $("user").value.trim(), text: $("notes").value }, $("rewrite"), $("rewrite-status"));
+    if (body) {
+      $("result").textContent = body.rewrite;
+      $("meta").textContent = `${body.model} · prompt ${body.prompt_version} · ${body.latency_ms} ms`;
+    }
+  };
+</script>
+</body>
+</html>
