@@ -111,7 +111,7 @@ GitHub-hosted runners start clean, so every run pulls the base image. The smalle
 | Date | 2026-09-27 |
 | Purpose | DEVOPS AI: does AI reduce the effort to find the root cause of a failed pipeline? |
 | Setup | A realistic validation bug was introduced on branch `demo/run-a` (PR #9) **without revealing it to the developer** (PROJECT_PLAN D8) |
-| Failed run | 36330985633 (`test` failed: 3 failed, 36 passed; later stages skipped) |
+| Failed runs | 36330985633 (#14) and 36330985512 (#13), the same commit, triggered twice by a simultaneous force-push of `main` and the PR branch (`test` failed: 3 failed, 36 passed; later stages skipped) |
 | Input to AI | Sanitized `test` log + job results |
 | Prompt version | `ci-v1` |
 | Model returned | `nvidia/nemotron-3-super-120b-a12b:free` · 2049 prompt / 511 completion tokens |
@@ -120,8 +120,11 @@ GitHub-hosted runners start clean, so every run pulls the base image. The smalle
 
 | | Stage | Root cause | File / line | Time |
 |---|---|---|---|---|
-| Developer (manual, raw log only) | ✅ test | ❌ not identified | ❌ not identified | stopped without a diagnosis |
-| DevOps AI | ✅ test | ✅ "validation for empty/whitespace notes missing; returns 200 instead of 422" | ⚠️ `tests/test_validation.py:9`: where the failure surfaced, not the source file | **3965 ms** |
+| Developer (manual, raw log only) | ✅ test | ❌ not identified | ❌ not identified | stopped after ~2–3 min without identifying the cause or file |
+| DevOps AI, run #14 | ✅ test | ✅ "validation for empty/whitespace notes missing; returns 200 instead of 422" | ⚠️ `tests/test_validation.py:9`: where the failure surfaced, not the source file | **3965 ms** |
+| DevOps AI, run #13 (independent repeat) | ✅ test | ✅ same cause ("not implemented in the endpoint … 200 instead of 422") | ⚠️ same `tests/test_validation.py:9` | **5720 ms** |
+
+**Consistency:** two independent AI runs on the same failure gave the same stage, cause and file (latencies 3965 ms and 5720 ms). The duplicate run cost one extra free call.
 
 **AI limitation (stated by the AI itself):** "the exact location of the validation logic (e.g., in a Pydantic model …) must be inferred". It pointed to the failing test, not the defective source file.
 
@@ -129,6 +132,6 @@ GitHub-hosted runners start clean, so every run pulls the base image. The smalle
 
 **Extra finding surfaced by the AI's evidence:** its log excerpt shows the empty request reaching the (mocked) OpenRouter call. In production this bug would have **wasted real AI quota on empty input**, which the unit tests catch.
 
-**Conclusion:** the AI correctly identified the stage and the root cause in ~4 s, where the manual read of the raw log stopped at the stage. It narrowed the search but mislocated the file, so human verification was still required to find and fix the defect. The AI stays advisory.
+**Conclusion:** the AI correctly identified the stage and the root cause in ~4–6 s (vs ~2–3 min manual without a result), where the manual read of the raw log stopped at the stage. It narrowed the search but mislocated the file, so human verification was still required to find and fix the defect. The AI stays advisory.
 
 **Pipeline bug found during this experiment:** the first attempt (run 36330681093) crashed the `ai-diagnose` job (exit code 2). With a single failed job, `download-artifact` extracts the log straight into the target folder, so the per-job lookup found nothing. It was fixed in the workflow and the blind run was repeated with the same planted bug.
