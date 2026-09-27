@@ -21,7 +21,7 @@ SEVERITIES = ("CRITICAL", "HIGH", "MEDIUM", "LOW", "UNKNOWN")
 
 
 def run(*args: str, check: bool = True) -> str:
-    return subprocess.run(args, cwd=ROOT, check=check, capture_output=True, text=True).stdout.strip()
+    return subprocess.run(args, cwd=ROOT, check=check, capture_output=True, text=True, encoding="utf-8", errors="replace").stdout.strip()
 
 
 def timed_build(tag: str, dockerfile: str, *extra: str) -> float:
