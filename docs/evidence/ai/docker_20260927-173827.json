@@ -1,0 +1,88 @@
+{
+  "mode": "docker",
+  "created_at": "2026-09-27T17:38:27+05:30",
+  "sanitization": {
+    "sanitized": true,
+    "redactions": {
+      "long_hex": 1
+    }
+  },
+  "input_sanitized": "Dockerfile:\n```\nFROM python:3.11\n\nWORKDIR /app\n\nCOPY requirements.txt .\nRUN pip install -r requirements.txt\n\nCOPY app/ app/\n\nEXPOSE 8000\nCMD [\"uvicorn\", \"app.main:app\", \"--host\", \"0.0.0.0\", \"--port\", \"8000\"]\n\n```\n\nrequirements.txt:\n```\nfastapi==0.141.1\nuvicorn==0.54.0\nhttpx==0.28.1\nprometheus_client==0.26.0\n\n```\n\n.dockerignore:\n```\n.env\n.git\n.gitignore\n__pycache__\n.venv\ndata/\ndocs/evidence/\n\n```\n\nRepository files:\n```\n.dockerignore\n.env.example\n.gitattributes\n.github/workflows/pipeline.yml\n.gitignore\nDockerfile\nREADME.md\nai_tools/__init__.py\nai_tools/ai_devops_analyzer.py\nai_tools/measure_image.py\napp/__init__.py\napp/llm_client.py\napp/main.py\napp/metrics.py\napp/schemas.py\napp/static/index.html\napp/storage.py\ndocs/architecture.png\ndocs/evidence/docker_baseline.json\ndocs/evidence/p0/01_tool_versions.png\ndocs/evidence/p0/02_github_repo.png\ndocs/evidence/p0/03_minikube_status.png\ndocs/evidence/p1/01_ui.png\ndocs/evidence/p1/02_swagger.png\ndocs/evidence/p1/03_missing_sample.png\ndocs/evidence/p3/01_docker_images.png\ndocs/evidence/p3/02_baseline_json.png\nrequirements-dev.txt\nrequirements.txt\ntests/__init__.py\ntests/conftest.py\ntests/test_analyzer_sanitize.py\ntests/test_integration_openrouter.py\ntests/test_measure_image.py\ntests/test_rewrite.py\ntests/test_sample.py\ntests/test_validation.py\n\n```\n\nBaseline measurements:\n```json\n{\n  \"label\": \"baseline\",\n  \"tag\": \"personalized-rewriter:bench-baseline\",\n  \"measured_at\": \"2026-09-27T17:06:27+05:30\",\n  \"dockerfile_sha256\": \"[REDACTED:hex]\",\n  \"code_commit\": \"bfd2f48\",\n  \"docker_version\": \"29.8.0\",\n  \"image_size_mb\": 1651.5,\n  \"cold_build_s\": 6.56,\n  \"warm_build_s\": 0.79,\n  \"code_change_rebuild_s\": 0.94,\n  \"filesystem_layers\": 11,\n  \"history_steps\": 19,\n  \"trivy\": {\n    \"total\": {\n      \"CRITICAL\": 19,\n      \"HIGH\": 326,\n      \"MEDIUM\": 1786,\n      \"LOW\": 1314,\n      \"UNKNOWN\": 560\n    },\n    \"fixable\": {\n      \"CRITICAL\": 3,\n      \"HIGH\": 10,\n      \"MEDIUM\": 19,\n      \"LOW\": 11,\n      \"UNKNOWN\": 0\n    }\n  },\n  \"startup_to_healthy_s\": 0.75,\n  \"runtime_uid\": \"0\",\n  \"configured_user\": \"root (unset)\"\n}\n\n```",
+  "prompt_version": "docker-v1",
+  "model_requested": "google/gemma-4-31b-it:free",
+  "fallback_models": [
+    "nvidia/nemotron-3-super-120b-a12b:free",
+    "qwen/qwen3.8-27b:free"
+  ],
+  "model_returned": "nvidia/nemotron-3-super-120b-a12b:free",
+  "provider": "Nvidia",
+  "latency_ms": 6277,
+  "tokens": {
+    "prompt": 999,
+    "completion": 815
+  },
+  "structured": true,
+  "output": {
+    "issues": [
+      "Base image includes full Python distribution with unnecessary build tools and packages",
+      "No .dockerignore exclusion for docs/, tests/, ai_tools/, and other non-runtime directories",
+      "Single-stage build includes development dependencies and source files not needed at runtime",
+      "Application runs as root user (UID 0)",
+      "No multi-stage build to separate build and runtime environments",
+      "Unnecessary copying of entire repository due to incomplete .dockerignore",
+      "No use of slim or distroless base image for reduced attack surface",
+      "No explicit non-root user creation",
+      "No cache optimization for dependency installation",
+      "No healthcheck defined"
+    ],
+    "recommended_changes": [
+      "Use python:3.11-slim as base image to reduce size",
+      "Add docs/, tests/, ai_tools/, .github/, README.md, and similar to .dockerignore",
+      "Implement multi-stage build: first stage for dependencies, second for runtime",
+      "Create and use a non-root user (e.g., appuser) in the final image",
+      "Copy only requirements.txt and install dependencies in first stage",
+      "Copy only the app/ directory in final stage",
+      "Use slim or distroless image in final stage",
+      "Add HEALTHCHECK instruction",
+      "Optimize layer caching by separating dependency install from code copy",
+      "Add user and group creation with proper permissions"
+    ],
+    "expected_effect": [
+      "Significant reduction in image size (expected 70-90% decrease)",
+      "Reduced number of layers and improved build cache efficiency",
+      "Faster cold and warm builds due to better layer caching",
+      "Decreased attack surface with fewer vulnerabilities",
+      "Elimination of critical and high severity Trivy findings in base image",
+      "Improved startup time due to smaller image",
+      "Better security posture from non-root execution",
+      "No negative impact on runtime functionality",
+      "More reliable builds due to explicit dependency isolation",
+      "Compliance with container security best practices"
+    ],
+    "security_considerations": [
+      "Running as root increases privilege escalation risk if container is compromised",
+      "Large base image includes unnecessary packages that may contain vulnerabilities",
+      "Exposure of build tools and development files in runtime image",
+      "Potential information leakage through included source and test files",
+      "Lack of healthcheck prevents orchestration systems from detecting unhealthy containers",
+      "No user namespace remapping in current configuration",
+      "Incomplete .dockerignore may lead to accidental inclusion of sensitive files",
+      "Use of latest tag equivalent (implicit) in base image reduces reproducibility",
+      "No vulnerability scanning in build pipeline indicated",
+      "No read-only root filesystem or dropped capabilities"
+    ],
+    "verification_commands": [
+      "docker build -t rewriter-optimized .",
+      "docker images rewriter-optimized --format '{{.Size}}'",
+      "docker run --rm -d -p 8000:8000 --name test-container rewriter-optimized && sleep 2 && docker ps && docker stop test-container",
+      "docker run --rm --entrypoint id rewriter-optimized",
+      "docker inspect --format='{{.Config.Healthcheck}}' rewriter-optimized",
+      "trivy image rewriter-optimized",
+      "docker history rewriter-optimized",
+      "docker run --rm rewriter-optimized ls -la /app",
+      "docker run --rm rewriter-optimized python --version",
+      "docker run --rm -p 8000:8000 rewriter-optimized & sleep 3 && curl -s http://localhost:8000/health || echo 'Health check failed' && kill $!"
+    ]
+  },
+  "output_text": "{\n  \"issues\": [\n    \"Base image includes full Python distribution with unnecessary build tools and packages\",\n    \"No .dockerignore exclusion for docs/, tests/, ai_tools/, and other non-runtime directories\",\n    \"Single-stage build includes development dependencies and source files not needed at runtime\",\n    \"Application runs as root user (UID 0)\",\n    \"No multi-stage build to separate build and runtime environments\",\n    \"Unnecessary copying of entire repository due to incomplete .dockerignore\",\n    \"No use of slim or distroless base image for reduced attack surface\",\n    \"No explicit non-root user creation\",\n    \"No cache optimization for dependency installation\",\n    \"No healthcheck defined\"\n  ],\n  \"recommended_changes\": [\n    \"Use python:3.11-slim as base image to reduce size\",\n    \"Add docs/, tests/, ai_tools/, .github/, README.md, and similar to .dockerignore\",\n    \"Implement multi-stage build: first stage for dependencies, second for runtime\",\n    \"Create and use a non-root user (e.g., appuser) in the final image\",\n    \"Copy only requirements.txt and install dependencies in first stage\",\n    \"Copy only the app/ directory in final stage\",\n    \"Use slim or distroless image in final stage\",\n    \"Add HEALTHCHECK instruction\",\n    \"Optimize layer caching by separating dependency install from code copy\",\n    \"Add user and group creation with proper permissions\"\n  ],\n  \"expected_effect\": [\n    \"Significant reduction in image size (expected 70-90% decrease)\",\n    \"Reduced number of layers and improved build cache efficiency\",\n    \"Faster cold and warm builds due to better layer caching\",\n    \"Decreased attack surface with fewer vulnerabilities\",\n    \"Elimination of critical and high severity Trivy findings in base image\",\n    \"Improved startup time due to smaller image\",\n    \"Better security posture from non-root execution\",\n    \"No negative impact on runtime functionality\",\n    \"More reliable builds due to explicit dependency isolation\",\n    \"Compliance with container security best practices\"\n  ],\n  \"security_considerations\": [\n    \"Running as root increases privilege escalation risk if container is compromised\",\n    \"Large base image includes unnecessary packages that may contain vulnerabilities\",\n    \"Exposure of build tools and development files in runtime image\",\n    \"Potential information leakage through included source and test files\",\n    \"Lack of healthcheck prevents orchestration systems from detecting unhealthy containers\",\n    \"No user namespace remapping in current configuration\",\n    \"Incomplete .dockerignore may lead to accidental inclusion of sensitive files\",\n    \"Use of latest tag equivalent (implicit) in base image reduces reproducibility\",\n    \"No vulnerability scanning in build pipeline indicated\",\n    \"No read-only root filesystem or dropped capabilities\"\n  ],\n  \"verification_commands\": [\n    \"docker build -t rewriter-optimized .\",\n    \"docker images rewriter-optimized --format '{{.Size}}'\",\n    \"docker run --rm -d -p 8000:8000 --name test-container rewriter-optimized && sleep 2 && docker ps && docker stop test-container\",\n    \"docker run --rm --entrypoint id rewriter-optimized\",\n    \"docker inspect --format='{{.Config.Healthcheck}}' rewriter-optimized\",\n    \"trivy image rewriter-optimized\",\n    \"docker history rewriter-optimized\",\n    \"docker run --rm rewriter-optimized ls -la /app\",\n    \"docker run --rm rewriter-optimized python --version\",\n    \"docker run --rm -p 8000:8000 rewriter-optimized & sleep 3 && curl -s http://localhost:8000/health || echo 'Health check failed' && kill $!\"\n  ]\n}"
+}

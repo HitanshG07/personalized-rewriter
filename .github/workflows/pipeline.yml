@@ -12,41 +12,189 @@ on:
 permissions:
   contents: read
 
+env:
+  GITLEAKS_VERSION: "8.30.1"
+  TRIVY_VERSION: "0.74.0"
+
+# Every job: step output is tee'd to $RUNNER_TEMP/raw (never uploaded); a final always() step sanitizes
+# it into logs/ and only logs/ is uploaded (PROJECT_PLAN §6.1).
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: requirements-dev.txt
-
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
-
       - name: pytest (OpenRouter mocked, 0 live calls)
         run: |
           set -o pipefail
           mkdir -p "$RUNNER_TEMP/raw"
           python -m pytest -q 2>&1 | tee "$RUNNER_TEMP/raw/test.log"
-
-      # Raw log stays in $RUNNER_TEMP (never uploaded); only the sanitized copy leaves the runner.
-      - name: Sanitize log
+      - name: Sanitize logs
         if: always()
-        run: |
+        run: &sanitize |
           mkdir -p logs
-          if [ -f "$RUNNER_TEMP/raw/test.log" ]; then
-            python ai_tools/ai_devops_analyzer.py sanitize "$RUNNER_TEMP/raw/test.log" --delete-raw > logs/test.log
-          fi
-
-      - name: Upload sanitized log
+          for f in "$RUNNER_TEMP"/raw/*.log; do
+            [ -e "$f" ] || continue
+            python3 ai_tools/ai_devops_analyzer.py sanitize "$f" --delete-raw > "logs/$(basename "$f")"
+          done
+      - name: Upload sanitized logs
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: logs-test
           path: logs/
           retention-days: 14
+          if-no-files-found: ignore
+
+  source-security:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # Gitleaks scans the full history
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install Bandit
+        run: pip install -r requirements-dev.txt
+      - name: Bandit (fail on medium+ severity)
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/raw"
+          bandit -r app -ll 2>&1 | tee "$RUNNER_TEMP/raw/bandit.log"
+      - name: Install Gitleaks (pinned, checksum-verified)
+        if: ${{ !cancelled() }}
+        run: |
+          cd "$RUNNER_TEMP"
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfLO "$base/$tarball"
+          curl -sSfLO "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          sha256sum --check --ignore-missing "gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          tar -xzf "$tarball" gitleaks
+          sudo install gitleaks /usr/local/bin/
+      - name: Gitleaks (fail on any finding, full history)
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/raw"
+          gitleaks git . --redact --no-banner -v 2>&1 | tee "$RUNNER_TEMP/raw/gitleaks.log"
+      - name: Sanitize logs
+        if: always()
+        run: *sanitize
+      - name: Upload sanitized logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: logs-source-security
+          path: logs/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  build-scan:
+    needs: source-security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Docker build
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/raw"
+          docker build -t "personalized-rewriter:${GITHUB_SHA}" . 2>&1 | tee "$RUNNER_TEMP/raw/docker-build.log"
+      - name: Install Trivy (pinned, checksum-verified)
+        run: |
+          cd "$RUNNER_TEMP"
+          base="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
+          tarball="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -sSfLO "$base/$tarball"
+          curl -sSfLO "$base/trivy_${TRIVY_VERSION}_checksums.txt"
+          sha256sum --check --ignore-missing "trivy_${TRIVY_VERSION}_checksums.txt"
+          tar -xzf "$tarball" trivy
+          sudo install trivy /usr/local/bin/
+      - name: Trivy report (fixable HIGH + CRITICAL, informational)
+        run: |
+          set -o pipefail
+          trivy image --quiet --scanners vuln --ignore-unfixed --severity HIGH,CRITICAL \
+            "personalized-rewriter:${GITHUB_SHA}" 2>&1 | tee "$RUNNER_TEMP/raw/trivy-report.log"
+      - name: Trivy gate (fail on fixable CRITICAL)
+        run: |
+          set -o pipefail
+          trivy image --quiet --scanners vuln --ignore-unfixed --severity CRITICAL --exit-code 1 \
+            "personalized-rewriter:${GITHUB_SHA}" 2>&1 | tee "$RUNNER_TEMP/raw/trivy-gate.log"
+      - name: Sanitize logs
+        if: always()
+        run: *sanitize
+      - name: Upload sanitized logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: logs-build-scan
+          path: logs/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  # DEVOPS AI: runs only when a pipeline job's result is 'failure' (never on green or skipped runs).
+  ai-diagnose:
+    needs: [test, source-security, build-scan]
+    if: always() && contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # PR comment only
+    env:
+      JOB_RESULTS: ${{ toJSON(needs) }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+      ANALYZER_MODEL: ${{ vars.ANALYZER_MODEL }}
+      ANALYZER_FALLBACK_MODELS: ${{ vars.ANALYZER_FALLBACK_MODELS }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Download sanitized logs
+        uses: actions/download-artifact@v8
+        with:
+          pattern: logs-*
+          path: ci-logs
+      - name: AI diagnosis (advisory only)
+        run: |
+          failed=$(python3 -c "import json,os; print(' '.join(k for k,v in json.loads(os.environ['JOB_RESULTS']).items() if v['result']=='failure'))")
+          files=""
+          for job in $failed; do files="$files $(ls ci-logs/logs-$job/*.log 2>/dev/null)"; done
+          echo "failed jobs: $failed"
+          if [ -z "${files// }" ]; then
+            echo "## AI CI failure diagnosis" >> "$GITHUB_STEP_SUMMARY"
+            echo "No sanitized logs were found for the failed job(s): $failed" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          python ai_tools/ai_devops_analyzer.py ci --log $files > diagnosis.md
+      - name: Comment diagnosis on the PR
+        if: github.event_name == 'pull_request' && hashFiles('diagnosis.md') != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file diagnosis.md
+      - name: Upload AI evidence (sanitized input + output)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ai-diagnosis
+          path: |
+            docs/evidence/ai/
+            diagnosis.md
+          retention-days: 30
           if-no-files-found: ignore

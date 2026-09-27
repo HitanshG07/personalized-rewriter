@@ -100,3 +100,19 @@ def test_token_usage_recorded(with_sample, openrouter):
     before = metric_value(with_sample, 'openrouter_tokens_total{type="prompt"}')
     rewrite(with_sample)
     assert metric_value(with_sample, 'openrouter_tokens_total{type="prompt"}') == before + 42
+
+
+def test_chat_attempts_and_backoff_are_configurable(openrouter, monkeypatch):
+    """The DevOps AI uses 3 attempts; the app keeps the 2-attempt baseline."""
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-not-real")
+    openrouter.queue = [httpx.Response(429), httpx.Response(429), ok_response()]
+    msgs = [{"role": "user", "content": "hi"}]
+    result = llm_client.chat(msgs, model="m", temperature=0, max_tokens=10, attempts=3, retry_delay_s=0)
+    assert result.text and len(openrouter.calls) == 3
+
+
+def test_extra_body_is_sent(openrouter, monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-not-real")
+    llm_client.chat([{"role": "user", "content": "hi"}], model="m", temperature=0, max_tokens=5,
+                    extra_body={"reasoning": {"enabled": False}})
+    assert openrouter.calls[0]["reasoning"] == {"enabled": False}

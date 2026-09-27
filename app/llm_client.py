@@ -63,8 +63,15 @@ def chat(
     max_tokens: int,
     fallback_models: list[str] | None = None,
     timeout_s: float = 30.0,
+    attempts: int = 2,
+    retry_delay_s: float | None = None,
+    extra_body: dict | None = None,
 ) -> LLMResult:
-    """One chat completion with timeout, one retry on timeout/429/5xx, and response validation."""
+    """Chat completion with timeout, retries on timeout/429/5xx (linear backoff), and response validation.
+
+    The app uses the defaults (2 attempts, RETRY_DELAY_S) - that is the measured baseline.
+    """
+    delay = RETRY_DELAY_S if retry_delay_s is None else retry_delay_s
     key = os.getenv("OPENROUTER_API_KEY")
     if not key or not model:
         raise LLMError("not_configured")
@@ -72,12 +79,13 @@ def chat(
     payload = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
     if fallback_models:  # disabled during formal evaluation/benchmarking (PROJECT_PLAN §4)
         payload["models"] = [model, *fallback_models]
+    payload.update(extra_body or {})
 
     reason = "upstream_error"
     with httpx.Client(transport=TRANSPORT, timeout=timeout_s) as client:
-        for attempt in range(2):
+        for attempt in range(attempts):
             if attempt:
-                time.sleep(RETRY_DELAY_S)
+                time.sleep(delay * attempt)
             metrics.OPENROUTER_REQUESTS.inc()
             start = time.perf_counter()
             try:
