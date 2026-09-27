@@ -66,10 +66,12 @@ def chat(
     attempts: int = 2,
     retry_delay_s: float | None = None,
     extra_body: dict | None = None,
+    retry_invalid: bool = False,
 ) -> LLMResult:
     """Chat completion with timeout, retries on timeout/429/5xx (linear backoff), and response validation.
 
-    The app uses the defaults (2 attempts, RETRY_DELAY_S) - that is the measured baseline.
+    The app uses the defaults (2 attempts, RETRY_DELAY_S, no retry of invalid answers) - the measured baseline.
+    An error object inside an HTTP 200 body is treated as a retryable upstream error.
     """
     delay = RETRY_DELAY_S if retry_delay_s is None else retry_delay_s
     key = os.getenv("OPENROUTER_API_KEY")
@@ -97,7 +99,13 @@ def chat(
             else:
                 elapsed = time.perf_counter() - start
                 if resp.status_code == 200:
-                    result = _parse(resp, elapsed)  # raises LLMError("invalid_response")
+                    try:
+                        result = _parse(resp, elapsed)
+                    except LLMError as e:  # _parse already counted the failure
+                        reason = e.reason
+                        if (reason == "upstream_error" or retry_invalid) and attempt < attempts - 1:
+                            continue
+                        raise
                     metrics.LLM_LATENCY.observe(elapsed)
                     return result
                 if resp.status_code == 429:
@@ -115,9 +123,15 @@ def chat(
 def _parse(resp: httpx.Response, elapsed: float) -> LLMResult:
     try:
         body = resp.json()
+    except ValueError:
+        body = {}
+    if isinstance(body, dict) and body.get("error"):  # OpenRouter can report upstream errors inside a 200
+        metrics.OPENROUTER_FAILURES.labels("upstream_error").inc()
+        raise LLMError("upstream_error")
+    try:
         text = body["choices"][0]["message"]["content"]
-    except (ValueError, KeyError, IndexError, TypeError):
-        text, body = None, {}
+    except (KeyError, IndexError, TypeError):
+        text = None
     if not isinstance(text, str) or not text.strip():
         metrics.OPENROUTER_FAILURES.labels("invalid_response").inc()
         raise LLMError("invalid_response")
