@@ -108,7 +108,7 @@ function Apply-Fix {
             return "Fix: back up the database with shutil.copy2 instead of a shell command"
         }
         "trivy" {
-            GitOk checkout origin/main -- Dockerfile
+            GitOk checkout -q origin/main -- Dockerfile
             return "Fix: apply the AI-recommended, developer-verified Dockerfile (slim base, non-root, multi-stage)"
         }
     }
