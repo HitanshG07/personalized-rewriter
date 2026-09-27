@@ -6,7 +6,7 @@ A small FastAPI service that rewrites rough notes in **your** writing style, usi
 
 | Role | Tool | Job |
 |---|---|---|
-| Development AI | Claude | Helps build and debug the project (not part of the system) |
+| Development AI | AI coding assistant | Helps build and debug the project (not part of the system) |
 | Application AI | OpenRouter | Rewrites text at runtime (`POST /rewrite`) |
 | DevOps AI | OpenRouter via `ai_tools/ai_devops_analyzer.py` | Diagnoses CI failures and reviews the Dockerfile and metrics (advisory only) |
 

@@ -173,9 +173,13 @@ jobs:
       - name: AI diagnosis (advisory only)
         run: |
           failed=$(python3 -c "import json,os; print(' '.join(k for k,v in json.loads(os.environ['JOB_RESULTS']).items() if v['result']=='failure'))")
-          files=""
-          for job in $failed; do files="$files $(ls ci-logs/logs-$job/*.log 2>/dev/null)"; done
           echo "failed jobs: $failed"
+          files=""
+          for job in $failed; do
+            if [ -d "ci-logs/logs-$job" ]; then files="$files $(find "ci-logs/logs-$job" -name '*.log' | tr '\n' ' ')"; fi
+          done
+          # With a single matching artifact, download-artifact extracts it straight into ci-logs/ (no sub-folder).
+          if [ -z "${files// }" ]; then files="$(find ci-logs -maxdepth 1 -name '*.log' | tr '\n' ' ')"; fi
           if [ -z "${files// }" ]; then
             echo "## AI CI failure diagnosis" >> "$GITHUB_STEP_SUMMARY"
             echo "No sanitized logs were found for the failed job(s): $failed" >> "$GITHUB_STEP_SUMMARY"
