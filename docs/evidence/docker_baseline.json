@@ -1,0 +1,33 @@
+{
+  "label": "baseline",
+  "tag": "personalized-rewriter:bench-baseline",
+  "measured_at": "2026-09-27T17:06:27+05:30",
+  "dockerfile_sha256": "a5811b768ad5d81be0a5b4f19fbe0144f761933e4ad58a569827a0baa88da095",
+  "code_commit": "bfd2f48",
+  "docker_version": "29.8.0",
+  "image_size_mb": 1651.5,
+  "cold_build_s": 6.56,
+  "warm_build_s": 0.79,
+  "code_change_rebuild_s": 0.94,
+  "filesystem_layers": 11,
+  "history_steps": 19,
+  "trivy": {
+    "total": {
+      "CRITICAL": 19,
+      "HIGH": 326,
+      "MEDIUM": 1786,
+      "LOW": 1314,
+      "UNKNOWN": 560
+    },
+    "fixable": {
+      "CRITICAL": 3,
+      "HIGH": 10,
+      "MEDIUM": 19,
+      "LOW": 11,
+      "UNKNOWN": 0
+    }
+  },
+  "startup_to_healthy_s": 0.75,
+  "runtime_uid": "0",
+  "configured_user": "root (unset)"
+}
