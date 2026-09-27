@@ -101,3 +101,34 @@ GitHub-hosted runners start clean, so every run pulls the base image. The smalle
 **Residual finding (not part of the accepted changes):** 2 fixable HIGH remain, in the base image's Python packaging tools (`wheel` CVE-2026-24049 → 0.46.2, `jaraco.context` CVE-2026-23949 → 6.1.0). A candidate for a follow-up AI iteration.
 
 **Conclusion:** the AI's core recommendation (slim base + non-root) was correct and **removes the fixable CRITICAL vulnerabilities that block the Trivy gate**. It also contained three factually wrong claims and an unrequested prediction, all caught by human verification.
+
+---
+
+## EXP-03 · DEVOPS AI · Deliverable A: blind CI failure diagnosis (manual vs AI)
+
+| Field | Value |
+|---|---|
+| Date | 2026-09-27 |
+| Purpose | DEVOPS AI: does AI reduce the effort to find the root cause of a failed pipeline? |
+| Setup | A realistic validation bug was introduced on branch `demo/run-a` (PR #9) **without revealing it to the developer** (PROJECT_PLAN D8) |
+| Failed run | 36330985633 (`test` failed: 3 failed, 36 passed; later stages skipped) |
+| Input to AI | Sanitized `test` log + job results |
+| Prompt version | `ci-v1` |
+| Model returned | `nvidia/nemotron-3-super-120b-a12b:free` · 2049 prompt / 511 completion tokens |
+
+**Ground truth (revealed after both diagnoses):** `app/schemas.py` line 20, `NotesText` `min_length` changed from `1` to `0`, so empty or whitespace-only notes passed validation. `/rewrite` returned 200 instead of 422 and **called OpenRouter with an empty request**.
+
+| | Stage | Root cause | File / line | Time |
+|---|---|---|---|---|
+| Developer (manual, raw log only) | ✅ test | ❌ not identified | ❌ not identified | stopped without a diagnosis |
+| DevOps AI | ✅ test | ✅ "validation for empty/whitespace notes missing; returns 200 instead of 422" | ⚠️ `tests/test_validation.py:9`: where the failure surfaced, not the source file | **3965 ms** |
+
+**AI limitation (stated by the AI itself):** "the exact location of the validation logic (e.g., in a Pydantic model …) must be inferred". It pointed to the failing test, not the defective source file.
+
+**Human verification:** following the AI's hint (validation in a Pydantic model), the developer located `NotesText` in `app/schemas.py` (`min_length=0`) and restored `min_length=1`. Verified with the local suite (39 passed), then CI run **36331580056: all jobs green, `ai-diagnose` skipped** (0 AI calls on a green run).
+
+**Extra finding surfaced by the AI's evidence:** its log excerpt shows the empty request reaching the (mocked) OpenRouter call. In production this bug would have **wasted real AI quota on empty input**, which the unit tests catch.
+
+**Conclusion:** the AI correctly identified the stage and the root cause in ~4 s, where the manual read of the raw log stopped at the stage. It narrowed the search but mislocated the file, so human verification was still required to find and fix the defect. The AI stays advisory.
+
+**Pipeline bug found during this experiment:** the first attempt (run 36330681093) crashed the `ai-diagnose` job (exit code 2). With a single failed job, `download-artifact` extracts the log straight into the target folder, so the per-job lookup found nothing. It was fixed in the workflow and the blind run was repeated with the same planted bug.
