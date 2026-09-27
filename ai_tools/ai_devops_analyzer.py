@@ -173,6 +173,8 @@ def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
             ],
             model=model, temperature=0.2, max_tokens=3000, timeout_s=120,
             fallback_models=fallbacks, attempts=3, retry_delay_s=5,
+            # thinking models otherwise spend the whole budget on hidden reasoning and return empty content
+            extra_body={"reasoning": {"enabled": False}},
         )
     except LLMError as e:
         return {**record, "error": e.reason, "output": None}
