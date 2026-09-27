@@ -87,3 +87,8 @@ def test_ci_mode_degrades_gracefully_without_key(tmp_path, monkeypatch, capsys):
     assert record["sanitization"]["sanitized"] is True
     assert FAKE_OR not in evidence.read_text(encoding="utf-8")
     assert '"test": "failure"' in record["input_sanitized"]
+
+
+def test_extract_json_after_reasoning_text_with_braces():
+    text = 'Thinking: the {test} job passed and set {x} ... Final answer:\n{"a": "ok", "b": ["x"]}\nDone.'
+    assert az.extract_json(text, {"a", "b"}) == {"a": "ok", "b": ["x"]}
