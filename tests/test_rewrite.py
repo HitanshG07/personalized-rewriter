@@ -109,3 +109,10 @@ def test_chat_attempts_and_backoff_are_configurable(openrouter, monkeypatch):
     msgs = [{"role": "user", "content": "hi"}]
     result = llm_client.chat(msgs, model="m", temperature=0, max_tokens=10, attempts=3, retry_delay_s=0)
     assert result.text and len(openrouter.calls) == 3
+
+
+def test_extra_body_is_sent(openrouter, monkeypatch):
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-not-real")
+    llm_client.chat([{"role": "user", "content": "hi"}], model="m", temperature=0, max_tokens=5,
+                    extra_body={"reasoning": {"enabled": False}})
+    assert openrouter.calls[0]["reasoning"] == {"enabled": False}

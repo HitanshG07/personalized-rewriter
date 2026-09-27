@@ -65,6 +65,7 @@ def chat(
     timeout_s: float = 30.0,
     attempts: int = 2,
     retry_delay_s: float | None = None,
+    extra_body: dict | None = None,
 ) -> LLMResult:
     """Chat completion with timeout, retries on timeout/429/5xx (linear backoff), and response validation.
 
@@ -78,6 +79,7 @@ def chat(
     payload = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
     if fallback_models:  # disabled during formal evaluation/benchmarking (PROJECT_PLAN §4)
         payload["models"] = [model, *fallback_models]
+    payload.update(extra_body or {})
 
     reason = "upstream_error"
     with httpx.Client(transport=TRANSPORT, timeout=timeout_s) as client:
