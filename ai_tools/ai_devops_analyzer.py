@@ -127,6 +127,10 @@ PROMPTS = {
         "verification_plan (string), limitations (string)."
     ),
 }
+JSON_ONLY = (
+    "\nOutput format: reply with the JSON object ONLY. Begin your reply with '{' and end it with '}'. "
+    "Do not write any analysis, reasoning, markdown or text outside the JSON."
+)
 REQUIRED = {
     "ci-v1": {"failed_stage", "probable_cause", "evidence", "affected_file_or_config", "recommended_fix",
               "verification_steps", "confidence", "limitations"},
@@ -137,14 +141,18 @@ REQUIRED = {
 
 
 def extract_json(text: str, required: set[str]) -> dict | None:
-    start, end = text.find("{"), text.rfind("}")
-    if start == -1 or end <= start:
-        return None
-    try:
-        data = json.loads(text[start : end + 1])
-    except json.JSONDecodeError:
-        return None
-    return data if isinstance(data, dict) and required <= data.keys() else None
+    """First JSON object in `text` that has all required keys (tolerates reasoning text and code fences)."""
+    decoder = json.JSONDecoder()
+    for i, ch in enumerate(text):
+        if ch != "{":
+            continue
+        try:
+            data, _ = decoder.raw_decode(text, i)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict) and required <= data.keys():
+            return data
+    return None
 
 
 def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
@@ -159,8 +167,11 @@ def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
     record = {"prompt_version": prompt_version, "model_requested": model, "fallback_models": fallbacks}
     try:
         r = chat(
-            [{"role": "system", "content": PROMPTS[prompt_version]}, {"role": "user", "content": user_content}],
-            model=model, temperature=0.2, max_tokens=1200, timeout_s=90,
+            [
+                {"role": "system", "content": PROMPTS[prompt_version] + JSON_ONLY},
+                {"role": "user", "content": user_content + "\n\n" + JSON_ONLY.strip()},
+            ],
+            model=model, temperature=0.2, max_tokens=3000, timeout_s=120,
             fallback_models=fallbacks, attempts=3, retry_delay_s=5,
         )
     except LLMError as e:
