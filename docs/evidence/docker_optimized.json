@@ -1,0 +1,33 @@
+{
+  "label": "optimized",
+  "tag": "personalized-rewriter:bench-optimized",
+  "measured_at": "2026-09-27T17:43:19+05:30",
+  "dockerfile_sha256": "e7b31b5db76cd98c987e6ca8028e057488dc5d481f9b8170a7182f41b2b04ec7",
+  "code_commit": "89e2348",
+  "docker_version": "29.8.0",
+  "image_size_mb": 213.6,
+  "cold_build_s": 5.9,
+  "warm_build_s": 0.72,
+  "code_change_rebuild_s": 0.85,
+  "filesystem_layers": 8,
+  "history_steps": 18,
+  "trivy": {
+    "total": {
+      "CRITICAL": 0,
+      "HIGH": 46,
+      "MEDIUM": 59,
+      "LOW": 58,
+      "UNKNOWN": 2
+    },
+    "fixable": {
+      "CRITICAL": 0,
+      "HIGH": 2,
+      "MEDIUM": 6,
+      "LOW": 1,
+      "UNKNOWN": 0
+    }
+  },
+  "startup_to_healthy_s": 0.96,
+  "runtime_uid": "10001",
+  "configured_user": "10001"
+}
