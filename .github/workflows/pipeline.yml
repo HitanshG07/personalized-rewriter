@@ -1,0 +1,52 @@
+name: pipeline
+
+# PRs to main + pushes to main only: one run per change, so a failure costs at most one AI diagnosis
+# (free OpenRouter tier = 50 calls/day).
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: pytest (OpenRouter mocked, 0 live calls)
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/raw"
+          python -m pytest -q 2>&1 | tee "$RUNNER_TEMP/raw/test.log"
+
+      # Raw log stays in $RUNNER_TEMP (never uploaded); only the sanitized copy leaves the runner.
+      - name: Sanitize log
+        if: always()
+        run: |
+          mkdir -p logs
+          if [ -f "$RUNNER_TEMP/raw/test.log" ]; then
+            python ai_tools/ai_devops_analyzer.py sanitize "$RUNNER_TEMP/raw/test.log" --delete-raw > logs/test.log
+          fi
+
+      - name: Upload sanitized log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: logs-test
+          path: logs/
+          retention-days: 14
+          if-no-files-found: ignore
