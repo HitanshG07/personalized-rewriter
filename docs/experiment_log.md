@@ -86,6 +86,18 @@ The app's own OpenRouter behaviour (2 attempts, 1 s, no fallback) was **not** ch
 - Startup got slightly slower (+0.21 s), recorded as measured.
 - Size, layers, vulnerabilities and runtime user are deterministic, and those are the main result.
 
+### CI pipeline effect (GitHub Actions, PR #8, same workflow, one run each)
+
+| `build-scan` job | Red run 36317865049 (baseline image) | Green run 36330450751 (AI-optimized) | Change |
+|---|---:|---:|---:|
+| Docker build step | 23 s | 10 s | −13 s |
+| Trivy report step | 16 s | 10 s | −6 s |
+| **Whole `build-scan` job** | **48 s** | **28 s** | **−20 s (−41.7%)** |
+| Trivy gate | ❌ failed (3 fixable CRITICAL) | ✅ passed | release unblocked |
+| `ai-diagnose` | ran (24 s, 1 AI call) | skipped | 0 AI calls on a green run |
+
+GitHub-hosted runners start clean, so every run pulls the base image. The smaller image therefore shortens the pipeline directly, unlike the laptop benchmark where the base image was already cached. These are single runs on shared runners, so expect some run-to-run variation.
+
 **Residual finding (not part of the accepted changes):** 2 fixable HIGH remain, in the base image's Python packaging tools (`wheel` CVE-2026-24049 → 0.46.2, `jaraco.context` CVE-2026-23949 → 6.1.0). A candidate for a follow-up AI iteration.
 
 **Conclusion:** the AI's core recommendation (slim base + non-root) was correct and **removes the fixable CRITICAL vulnerabilities that block the Trivy gate**. It also contained three factually wrong claims and an unrequested prediction, all caught by human verification.
