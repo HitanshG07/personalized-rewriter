@@ -17,7 +17,7 @@ _Clean = BeforeValidator(lambda v: normalize(v) if isinstance(v, str) else v)
 
 UserId = Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
 SampleText = Annotated[str, _Clean, Field(min_length=50, max_length=4000)]
-NotesText = Annotated[str, _Clean, Field(min_length=0, max_length=2000)]
+NotesText = Annotated[str, _Clean, Field(min_length=1, max_length=2000)]
 
 
 class SampleIn(BaseModel):
