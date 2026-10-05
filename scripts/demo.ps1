@@ -9,6 +9,8 @@ so main always stays green.
   .\scripts\demo.ps1 fix    <scenario>      push the verified fix to the same PR -> CI green, ai-diagnose skipped
   .\scripts\demo.ps1 close  <scenario>      close the PR (not merged) and delete the demo branch
   .\scripts\demo.ps1 compare                Docker before/after table from the saved benchmarks
+  .\scripts\demo.ps1 before [-NoCache]      LIVE: build the ORIGINAL image (Dockerfile.baseline), show size, user, CRITICAL CVEs
+  .\scripts\demo.ps1 after  [-NoCache]      LIVE: build the AI-OPTIMIZED image (Dockerfile), show size, user, CRITICAL CVEs
 
 Scenarios:
   ci-test   validation bug (empty notes accepted)          -> fails at: test
@@ -19,11 +21,12 @@ Each 'break' costs 1 free AI call (the diagnosis). 'fix', 'check', 'tests' and '
 #>
 param(
     [Parameter(Position = 0, Mandatory = $true)]
-    [ValidateSet("check", "tests", "break", "status", "fix", "close", "compare")]
+    [ValidateSet("check", "tests", "break", "status", "fix", "close", "compare", "before", "after")]
     [string]$Command,
     [Parameter(Position = 1)]
     [ValidateSet("ci-test", "security", "trivy")]
-    [string]$Scenario
+    [string]$Scenario,
+    [switch]$NoCache
 )
 $ErrorActionPreference = "Continue"  # native tools write progress to stderr; failures are checked explicitly
 $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
@@ -207,6 +210,33 @@ print(f"AI calls today: {d['used']} used, {d['remaining']} left of {d['limit']}"
                 Say "Closed PR #$pr and deleted $(Branch)." "Green"
             } else { Say "No open PR for $(Branch)." }
             git branch -D (Branch) 2>$null | Out-Null
+        }
+        { $_ -in "before", "after" } {
+            docker info --format "{{.ServerVersion}}" 2>$null | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "Docker Desktop is not running" }
+            if ($Command -eq "before") { $file = "Dockerfile.baseline"; $tag = "rewriter:before"; $label = "ORIGINAL (before AI optimization)" }
+            else { $file = "Dockerfile"; $tag = "rewriter:after"; $label = "AI-OPTIMIZED (after)" }
+            $buildArgs = @("build", "-q", "-f", $file, "-t", $tag)
+            if ($NoCache) { $buildArgs += "--no-cache" }
+            Say "Building the $label image from $file ..." "Yellow"
+            $secs = (Measure-Command { & docker @buildArgs . | Out-Null }).TotalSeconds
+            if ($LASTEXITCODE -ne 0) { throw "docker build failed" }
+            $sizeMb = [math]::Round([double](docker image inspect $tag --format "{{.Size}}") / 1e6, 1)
+            $user = docker run --rm --entrypoint id $tag
+            Say "Scanning with Trivy (fixable CRITICAL only)..." "Yellow"
+            $scan = (trivy image --quiet --scanners vuln --ignore-unfixed --severity CRITICAL --format json $tag 2>$null | Out-String) | ConvertFrom-Json
+            $vulns = @($scan.Results | ForEach-Object { $_.Vulnerabilities } | Where-Object { $_ })
+            $color = if ($Command -eq "before") { "Red" } else { "Green" }
+            Write-Host ""
+            Say "==================== $label ====================" $color
+            Say ("Dockerfile        : {0}" -f $file)
+            Say ("Build time        : {0:N1} s{1}" -f $secs, $(if ($NoCache) { " (no cache)" } else { " (cached layers reused)" }))
+            Say ("Image size        : {0} MB" -f $sizeMb) $color
+            Say ("Runs as           : {0}" -f $user) $color
+            Say ("Fixable CRITICAL  : {0}" -f $vulns.Count) $color
+            foreach ($v in $vulns) { Write-Host ("   {0,-14} {1,-16} fixed in {2}" -f $v.PkgName, $v.VulnerabilityID, $v.FixedVersion) -ForegroundColor $color }
+            Write-Host ""
+            docker images rewriter
         }
         "compare" {
             Run-Python @'
