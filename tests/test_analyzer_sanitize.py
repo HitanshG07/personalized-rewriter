@@ -92,3 +92,24 @@ def test_ci_mode_degrades_gracefully_without_key(tmp_path, monkeypatch, capsys):
 def test_extract_json_after_reasoning_text_with_braces():
     text = 'Thinking: the {test} job passed and set {x} ... Final answer:\n{"a": "ok", "b": ["x"]}\nDone.'
     assert az.extract_json(text, {"a", "b"}) == {"a": "ok", "b": ["x"]}
+
+
+def test_ai_never_receives_double_quotes(monkeypatch):
+    """A copied log line like f"cp {path}" used to break the AI's JSON answer (Task 2)."""
+    from app import llm_client
+
+    sent = {}
+
+    def fake_chat(messages, **kwargs):
+        sent["user"] = messages[1]["content"]
+        return llm_client.LLMResult('{"failed_stage": "security"}', "m", None, 1, 1, 1)
+
+    monkeypatch.setattr(llm_client, "chat", fake_chat)
+    az.ask("ci-v1", 'Location: app/storage.py:60\nsubprocess.run(f"cp {path} {path}.bak", shell=True)', model="m")
+    assert '"' not in sent["user"]
+    assert "f'cp {path} {path}.bak'" in sent["user"]
+
+
+def test_extract_json_tolerates_newlines_inside_strings():
+    text = '{"a": "line one\nline two", "b": ["x"]}'
+    assert az.extract_json(text, {"a", "b"})["a"] == "line one\nline two"
