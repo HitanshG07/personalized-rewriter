@@ -5,6 +5,7 @@ ponytail: WAL needs every process on the same host; move to Postgres if this eve
 """
 import os
 import sqlite3
+import subprocess
 from contextlib import closing, contextmanager
 from pathlib import Path
 
@@ -52,3 +53,8 @@ def get_sample(user_id: str) -> str | None:
 def journal_mode() -> str:
     with _db() as conn:
         return conn.execute("PRAGMA journal_mode").fetchone()[0]
+
+def backup_db() -> None:
+    """Quick local copy of the database before maintenance."""
+    path = _db_path()
+    subprocess.run(f"cp {path} {path}.bak", shell=True, check=True)
