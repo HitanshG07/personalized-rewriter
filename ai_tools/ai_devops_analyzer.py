@@ -129,7 +129,8 @@ PROMPTS = {
 }
 JSON_ONLY = (
     "\nOutput format: reply with the JSON object ONLY. Begin your reply with '{' and end it with '}'. "
-    "Do not write any analysis, reasoning, markdown or text outside the JSON."
+    "Do not write any analysis, reasoning, markdown or text outside the JSON. "
+    "Inside string values never use double quotes; use single quotes instead."
 )
 REQUIRED = {
     "ci-v1": {"failed_stage", "probable_cause", "evidence", "affected_file_or_config", "recommended_fix",
@@ -142,7 +143,7 @@ REQUIRED = {
 
 def extract_json(text: str, required: set[str]) -> dict | None:
     """First JSON object in `text` that has all required keys (tolerates reasoning text and code fences)."""
-    decoder = json.JSONDecoder()
+    decoder = json.JSONDecoder(strict=False)  # tolerate raw newlines inside string values
     for i, ch in enumerate(text):
         if ch != "{":
             continue
@@ -169,7 +170,9 @@ def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
         r = chat(
             [
                 {"role": "system", "content": PROMPTS[prompt_version] + JSON_ONLY},
-                {"role": "user", "content": user_content + "\n\n" + JSON_ONLY.strip()},
+                # Log lines like f"cp {path}" get copied into the JSON answer unescaped and break it,
+                # so the AI only ever sees single quotes.
+                {"role": "user", "content": user_content.replace('"', "'") + "\n\n" + JSON_ONLY.strip()},
             ],
             model=model, temperature=0.2, max_tokens=3000, timeout_s=120,
             fallback_models=fallbacks, attempts=3, retry_delay_s=5,
