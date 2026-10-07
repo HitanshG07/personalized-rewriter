@@ -1,0 +1,6 @@
+# Accepted risks for the quality gate. One rule id per line, then the reason and a review date.
+# A rule id listed here no longer fails the build, but it still appears in findings.json and the AI report.
+#
+# Example:
+# CVE-2024-0001   # vulnerable function is never called by this app; review 2026-12-01
+DS-0002 Dockerfile.baseline   # intentionally unoptimized comparison file, never deployed
