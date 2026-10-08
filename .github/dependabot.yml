@@ -1,0 +1,32 @@
+# Dependabot version updates: opens pull requests for outdated dependencies.
+# A human reviews and merges every PR; the pipeline (tests, scans, vulnerability triage) runs on each one.
+# Dependabot only reads this file from the default branch (main).
+version: 2
+updates:
+  # Python packages (requirements files in the repo root)
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+
+  # Actions used in .github/workflows (checkout, setup-python, upload-artifact, ...)
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Kolkata"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+
+  # Docker is left out on purpose: Dockerfile.baseline must stay pinned to the image measured in
+  # docs/evidence/docker_baseline.json. To track the real Dockerfile, add a "docker" entry and close
+  # any PR that touches Dockerfile.baseline.
