@@ -1,0 +1,93 @@
+# Vulnerability detection + AI triage + quality gate (separate from the base CI workflow).
+# Raw scanner reports stay in $RUNNER_TEMP and are never uploaded; only the sanitized findings.json,
+# the AI report and the AI evidence are uploaded.
+name: Vulnerability triage
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    - cron: "30 20 * * *" # nightly, 02:00 IST: new CVEs appear against unchanged code
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TRIVY_VERSION: "0.74.0"
+
+jobs:
+  vuln-triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # PR comment only
+    env:
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+      ANALYZER_MODEL: ${{ vars.ANALYZER_MODEL }}
+      ANALYZER_FALLBACK_MODELS: ${{ vars.ANALYZER_FALLBACK_MODELS }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Install pip-audit
+        run: pip install pip-audit # tip: pin it by adding the installed version to requirements-dev.txt
+      - name: Install Trivy (pinned, checksum-verified)
+        run: |
+          cd "$RUNNER_TEMP"
+          base="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}"
+          tarball="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -sSfLO "$base/$tarball"
+          curl -sSfLO "$base/trivy_${TRIVY_VERSION}_checksums.txt"
+          sha256sum --check --ignore-missing "trivy_${TRIVY_VERSION}_checksums.txt"
+          tar -xzf "$tarball" trivy
+          sudo install trivy /usr/local/bin/
+      - name: Scan (Bandit, pip-audit, Trivy fs for dependencies and configs)
+        run: |
+          R="$RUNNER_TEMP/reports"
+          mkdir -p "$R" security-out
+          bandit -r app -f json -o "$R/bandit.json" || true
+          pip-audit -r requirements.txt -f json -o "$R/pip-audit.json" || true
+          trivy fs --quiet --scanners vuln,misconfig --format json --output "$R/trivy.json" .
+          for f in bandit pip-audit trivy; do
+            test -s "$R/$f.json" || { echo "missing report: $f"; exit 1; }
+          done
+      - name: Merge findings (sanitized, deduplicated)
+        run: |
+          R="$RUNNER_TEMP/reports"
+          python ai_tools/collect_findings.py \
+            --bandit "$R/bandit.json" --pip-audit "$R/pip-audit.json" --trivy "$R/trivy.json" \
+            --out security-out/findings.json
+      - name: AI triage (advisory only)
+        if: env.OPENROUTER_API_KEY != ''
+        continue-on-error: true
+        run: python ai_tools/security_triage.py --findings security-out/findings.json > security-out/triage.md
+      - name: AI triage skipped (no API key)
+        if: env.OPENROUTER_API_KEY == ''
+        run: echo "AI triage skipped - OPENROUTER_API_KEY is not available (fork PR or secret not set)." >> "$GITHUB_STEP_SUMMARY"
+      - name: Comment triage on the PR
+        if: github.event_name == 'pull_request' && hashFiles('security-out/triage.md') != ''
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file security-out/triage.md
+      - name: Upload findings and AI report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vuln-triage
+          path: |
+            security-out/
+            docs/evidence/ai/
+          retention-days: 30
+          if-no-files-found: ignore
+      - name: Quality gate (fail on HIGH or CRITICAL, allowlist in security/allowlist.txt)
+        run: python ai_tools/security_gate.py --findings security-out/findings.json --fail-on HIGH --allowlist security/allowlist.txt
