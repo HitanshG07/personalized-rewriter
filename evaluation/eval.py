@@ -31,7 +31,7 @@ META = HERE / "evaluation_metadata.json"
 SUMMARY = HERE / "evaluation_summary.csv"
 ROUNDS = {1: ["prompt_v1", "prompt_v2", "prompt_v3"], 2: ["model_A", "model_B", "model_C"]}
 # A spec is "model" (OpenRouter) or "groq:model" / "google:model" (second free provider, see app.llm_client.PROVIDERS).
-CANDIDATE_MODELS = {"A": "minimax/minimax-m3.1-flash:free", "B": "google/gemma-4-31b-it:free",
+CANDIDATE_MODELS = {"A": "google:gemini-3.5-flash-lite", "B": "minimax/minimax-m3.1-flash:free",
                     "C": "nvidia/nemotron-3.5-lightning:free"}
 TEMPERATURE, MAX_TOKENS = 0.7, 1000  # same as the deployed app (k8s/app-config.env)
 SCORE_KEYS = ("quality", "meaning", "tone")

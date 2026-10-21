@@ -1,6 +1,6 @@
 {
-  "prompt_v1": {
-    "run_id": "prompt_v1",
+  "minimax_prompt_v1": {
+    "run_id": "minimax_prompt_v1",
     "round": 1,
     "model_id": "minimax/minimax-m3.1-flash:free",
     "prompt_version": "v1",
@@ -16,10 +16,11 @@
     "model_mismatches": 0,
     "model_version": [
       "minimax/minimax-m3.1-flash:free"
-    ]
+    ],
+    "note": "first round-1 attempt on OpenRouter MiniMax; kept as model B candidate data"
   },
-  "prompt_v2": {
-    "run_id": "prompt_v2",
+  "minimax_prompt_v2": {
+    "run_id": "minimax_prompt_v2",
     "round": 1,
     "model_id": "minimax/minimax-m3.1-flash:free",
     "prompt_version": "v2",
@@ -35,6 +36,140 @@
     "model_mismatches": 0,
     "model_version": [
       "minimax/minimax-m3.1-flash:free"
-    ]
+    ],
+    "note": "first round-1 attempt on OpenRouter MiniMax; kept as model B candidate data"
+  },
+  "prompt_v1": {
+    "run_id": "prompt_v1",
+    "round": 1,
+    "model_id": "gemini-3.5-flash-lite",
+    "provider": "google",
+    "prompt_version": "v1",
+    "temperature": 0.7,
+    "max_output_tokens": 1000,
+    "fallback_models": [],
+    "n_samples": 20,
+    "inputs_sha256": "1349e131d83daac0c3b6cc1774d085dc8ca7702de0a3f99b747bd5e286a76535",
+    "code_commit": "7cf111a",
+    "evaluation_started": "2026-10-22T01:34:23+05:30",
+    "evaluation_finished": "2026-10-22T01:36:21+05:30",
+    "calls_ok": 20,
+    "model_mismatches": 0,
+    "model_version": [
+      "gemini-3.5-flash-lite"
+    ],
+    "shuffle_seed": 669691149,
+    "scorer": "AI judge (assistant), blind: scored from shuffled Candidate 1/2/3 sheet without the label map; developer-approved deviation from human scoring (PROJECT_PLAN D7)"
+  },
+  "prompt_v2": {
+    "run_id": "prompt_v2",
+    "round": 1,
+    "model_id": "gemini-3.5-flash-lite",
+    "provider": "google",
+    "prompt_version": "v2",
+    "temperature": 0.7,
+    "max_output_tokens": 1000,
+    "fallback_models": [],
+    "n_samples": 20,
+    "inputs_sha256": "1349e131d83daac0c3b6cc1774d085dc8ca7702de0a3f99b747bd5e286a76535",
+    "code_commit": "7cf111a",
+    "evaluation_started": "2026-10-22T01:36:21+05:30",
+    "evaluation_finished": "2026-10-22T01:38:20+05:30",
+    "calls_ok": 20,
+    "model_mismatches": 0,
+    "model_version": [
+      "gemini-3.5-flash-lite"
+    ],
+    "shuffle_seed": 669691149,
+    "scorer": "AI judge (assistant), blind: scored from shuffled Candidate 1/2/3 sheet without the label map; developer-approved deviation from human scoring (PROJECT_PLAN D7)"
+  },
+  "prompt_v3": {
+    "run_id": "prompt_v3",
+    "round": 1,
+    "model_id": "gemini-3.5-flash-lite",
+    "provider": "google",
+    "prompt_version": "v3",
+    "temperature": 0.7,
+    "max_output_tokens": 1000,
+    "fallback_models": [],
+    "n_samples": 20,
+    "inputs_sha256": "1349e131d83daac0c3b6cc1774d085dc8ca7702de0a3f99b747bd5e286a76535",
+    "code_commit": "7cf111a",
+    "evaluation_started": "2026-10-22T01:38:20+05:30",
+    "evaluation_finished": "2026-10-22T01:40:22+05:30",
+    "calls_ok": 20,
+    "model_mismatches": 0,
+    "model_version": [
+      "gemini-3.5-flash-lite"
+    ],
+    "shuffle_seed": 669691149,
+    "scorer": "AI judge (assistant), blind: scored from shuffled Candidate 1/2/3 sheet without the label map; developer-approved deviation from human scoring (PROJECT_PLAN D7)"
+  },
+  "model_A": {
+    "run_id": "model_A",
+    "round": 2,
+    "model_id": "gemini-3.5-flash-lite",
+    "provider": "google",
+    "prompt_version": "v3",
+    "temperature": 0.7,
+    "max_output_tokens": 1000,
+    "fallback_models": [],
+    "n_samples": 20,
+    "inputs_sha256": "1349e131d83daac0c3b6cc1774d085dc8ca7702de0a3f99b747bd5e286a76535",
+    "code_commit": "7cf111a",
+    "evaluation_started": "2026-10-22T01:38:20+05:30",
+    "evaluation_finished": "2026-10-22T01:40:22+05:30",
+    "calls_ok": 20,
+    "model_mismatches": 0,
+    "model_version": [
+      "gemini-3.5-flash-lite"
+    ],
+    "shuffle_seed": 61717762,
+    "scorer": "AI judge (assistant), blind: scored from shuffled Candidate 1/2/3 sheet without the label map; developer-approved deviation from human scoring (PROJECT_PLAN D7). Scored 17 samples present for all three models.",
+    "copied_from": "prompt_v3"
+  },
+  "model_B": {
+    "run_id": "model_B",
+    "round": 2,
+    "model_id": "gemma-4-31b-it",
+    "provider": "google",
+    "prompt_version": "v3",
+    "temperature": 0.7,
+    "max_output_tokens": 1000,
+    "fallback_models": [],
+    "n_samples": 20,
+    "inputs_sha256": "1349e131d83daac0c3b6cc1774d085dc8ca7702de0a3f99b747bd5e286a76535",
+    "code_commit": "e3ed156",
+    "evaluation_started": "2026-10-22T01:49:30+05:30",
+    "evaluation_finished": null,
+    "calls_ok": 19,
+    "model_mismatches": 0,
+    "model_version": [
+      "gemma-4-31b-it"
+    ],
+    "shuffle_seed": 61717762,
+    "scorer": "AI judge (assistant), blind: scored from shuffled Candidate 1/2/3 sheet without the label map; developer-approved deviation from human scoring (PROJECT_PLAN D7). Scored 17 samples present for all three models."
+  },
+  "model_C": {
+    "run_id": "model_C",
+    "round": 2,
+    "model_id": "gemini-3.1-flash-lite",
+    "provider": "google",
+    "prompt_version": "v3",
+    "temperature": 0.7,
+    "max_output_tokens": 1000,
+    "fallback_models": [],
+    "n_samples": 20,
+    "inputs_sha256": "1349e131d83daac0c3b6cc1774d085dc8ca7702de0a3f99b747bd5e286a76535",
+    "code_commit": "e3ed156",
+    "evaluation_started": "2026-10-22T01:57:30+05:30",
+    "evaluation_finished": null,
+    "calls_ok": 18,
+    "model_mismatches": 0,
+    "model_version": [
+      "gemini-3.1-flash-lite"
+    ],
+    "shuffle_seed": 61717762,
+    "scorer": "AI judge (assistant), blind: scored from shuffled Candidate 1/2/3 sheet without the label map; developer-approved deviation from human scoring (PROJECT_PLAN D7). Scored 17 samples present for all three models."
   }
 }

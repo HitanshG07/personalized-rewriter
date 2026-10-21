@@ -130,6 +130,7 @@ PROMPTS = {
 JSON_ONLY = (
     "\nOutput format: reply with the JSON object ONLY. Begin your reply with '{' and end it with '}'. "
     "Do not write any analysis, reasoning, markdown or text outside the JSON. "
+    "Keys and string delimiters must be standard JSON double quotes. "
     "Inside string values never use double quotes; use single quotes instead."
 )
 REQUIRED = {
@@ -164,8 +165,13 @@ def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
     model = model or os.getenv("ANALYZER_MODEL") or os.getenv("OPENROUTER_MODEL", "")
     # Availability over reproducibility here: free models get throttled upstream, so the DevOps AI retries with
     # backoff and may fall back to other free models. (Formal evaluation never uses fallback - PROJECT_PLAN D13.)
+    prefix, _, bare = model.partition(":")
+    provider, model = (prefix, bare) if prefix in ("google", "groq") else ("openrouter", model)
     fallbacks = [m.strip() for m in os.getenv("ANALYZER_FALLBACK_MODELS", "").split(",") if m.strip()]
-    record = {"prompt_version": prompt_version, "model_requested": model, "fallback_models": fallbacks}
+    if provider != "openrouter":
+        fallbacks = None  # fallbacks are an OpenRouter feature
+    record = {"prompt_version": prompt_version, "provider": provider, "model_requested": model,
+              "fallback_models": fallbacks or []}
     try:
         r = chat(
             [
@@ -174,7 +180,7 @@ def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
                 # so the AI only ever sees single quotes.
                 {"role": "user", "content": user_content.replace('"', "'") + "\n\n" + JSON_ONLY.strip()},
             ],
-            model=model, temperature=0.2, max_tokens=3000, timeout_s=120,
+            model=model, provider=provider, temperature=0.2, max_tokens=3000, timeout_s=120,
             fallback_models=fallbacks, attempts=3, retry_delay_s=5,
             retry_invalid=True,  # free models occasionally return an empty answer; try again / next model
         )
@@ -184,7 +190,7 @@ def ask(prompt_version: str, user_content: str, model: str | None) -> dict:
     return {
         **record,
         "model_returned": r.model,
-        "provider": r.provider,
+        "upstream_provider": r.provider,
         "latency_ms": r.latency_ms,
         "tokens": {"prompt": r.prompt_tokens, "completion": r.completion_tokens},
         "structured": parsed is not None,

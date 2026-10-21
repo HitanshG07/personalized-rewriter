@@ -1,0 +1,90 @@
+{
+  "seed": 61717762,
+  "order": {
+    "s01": [
+      "model_B",
+      "model_C",
+      "model_A"
+    ],
+    "s03": [
+      "model_C",
+      "model_B",
+      "model_A"
+    ],
+    "s04": [
+      "model_B",
+      "model_A",
+      "model_C"
+    ],
+    "s05": [
+      "model_A",
+      "model_C",
+      "model_B"
+    ],
+    "s06": [
+      "model_B",
+      "model_C",
+      "model_A"
+    ],
+    "s07": [
+      "model_C",
+      "model_A",
+      "model_B"
+    ],
+    "s08": [
+      "model_A",
+      "model_B",
+      "model_C"
+    ],
+    "s09": [
+      "model_A",
+      "model_B",
+      "model_C"
+    ],
+    "s10": [
+      "model_A",
+      "model_B",
+      "model_C"
+    ],
+    "s12": [
+      "model_A",
+      "model_B",
+      "model_C"
+    ],
+    "s14": [
+      "model_C",
+      "model_B",
+      "model_A"
+    ],
+    "s15": [
+      "model_C",
+      "model_B",
+      "model_A"
+    ],
+    "s16": [
+      "model_A",
+      "model_B",
+      "model_C"
+    ],
+    "s17": [
+      "model_C",
+      "model_B",
+      "model_A"
+    ],
+    "s18": [
+      "model_C",
+      "model_B",
+      "model_A"
+    ],
+    "s19": [
+      "model_B",
+      "model_A",
+      "model_C"
+    ],
+    "s20": [
+      "model_A",
+      "model_B",
+      "model_C"
+    ]
+  }
+}

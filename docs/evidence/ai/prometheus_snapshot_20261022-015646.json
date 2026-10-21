@@ -1,0 +1,120 @@
+{
+  "taken_at": "2026-10-22T01:56:46+05:30",
+  "queries": {
+    "request_rate_per_s": {
+      "promql": "sum by (endpoint) (rate(requests_total[5m]))",
+      "result": [
+        {
+          "labels": {
+            "endpoint": "/health"
+          },
+          "value": "0.675973028574092"
+        },
+        {
+          "labels": {
+            "endpoint": "/metrics"
+          },
+          "value": "0.29047237158533623"
+        },
+        {
+          "labels": {
+            "endpoint": "/rewrite"
+          },
+          "value": "0.047167165001581746"
+        },
+        {
+          "labels": {
+            "endpoint": "/sample"
+          },
+          "value": "0"
+        }
+      ]
+    },
+    "error_rate_per_s": {
+      "promql": "sum by (endpoint, reason) (rate(errors_total[5m]))",
+      "result": [
+        {
+          "labels": {
+            "endpoint": "/rewrite",
+            "reason": "no_sample"
+          },
+          "value": "0"
+        }
+      ]
+    },
+    "rewrite_failures_by_reason": {
+      "promql": "sum by (reason) (increase(rewrite_failures_total[15m]))",
+      "result": [
+        {
+          "labels": {
+            "reason": "no_sample"
+          },
+          "value": "0"
+        }
+      ]
+    },
+    "openrouter_failures_by_reason": {
+      "promql": "sum by (reason) (increase(openrouter_failures_total[15m]))",
+      "result": []
+    },
+    "llm_latency_p50_s": {
+      "promql": "histogram_quantile(0.5, sum by (le) (rate(llm_latency_seconds_bucket[15m])))",
+      "result": [
+        {
+          "labels": {},
+          "value": "0.75"
+        }
+      ]
+    },
+    "llm_latency_p95_s": {
+      "promql": "histogram_quantile(0.95, sum by (le) (rate(llm_latency_seconds_bucket[15m])))",
+      "result": [
+        {
+          "labels": {},
+          "value": "0.9749999999999999"
+        }
+      ]
+    },
+    "rewrite_latency_p95_s": {
+      "promql": "histogram_quantile(0.95, sum by (le) (rate(request_latency_seconds_bucket{endpoint=\"/rewrite\"}[15m])))",
+      "result": [
+        {
+          "labels": {},
+          "value": "0.9833333333333333"
+        }
+      ]
+    },
+    "completion_tokens_per_call": {
+      "promql": "increase(openrouter_tokens_total{type=\"completion\"}[15m]) / ignoring(type) increase(openrouter_requests_total[15m])",
+      "result": [
+        {
+          "labels": {
+            "instance": "10.244.0.23:8000",
+            "job": "rewriter",
+            "namespace": "rewriter-ia2",
+            "pod": "rewriter-5747654565-2pgxp"
+          },
+          "value": "NaN"
+        },
+        {
+          "labels": {
+            "instance": "10.244.0.21:8000",
+            "job": "rewriter",
+            "namespace": "rewriter-ia2",
+            "pod": "rewriter-5747654565-5jxmd"
+          },
+          "value": "14.256057538044486"
+        }
+      ]
+    },
+    "pods_up": {
+      "promql": "count(up{job=\"rewriter\"} == 1)",
+      "result": [
+        {
+          "labels": {},
+          "value": "3"
+        }
+      ]
+    }
+  }
+}

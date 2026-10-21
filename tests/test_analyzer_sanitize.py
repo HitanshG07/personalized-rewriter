@@ -113,3 +113,28 @@ def test_ai_never_receives_double_quotes(monkeypatch):
 def test_extract_json_tolerates_newlines_inside_strings():
     text = '{"a": "line one\nline two", "b": ["x"]}'
     assert az.extract_json(text, {"a", "b"})["a"] == "line one\nline two"
+
+
+def _capture(monkeypatch, model):
+    from app import llm_client
+
+    seen = {}
+
+    def fake_chat(messages, **kwargs):
+        seen.update(kwargs)
+        return llm_client.LLMResult('{"failed_stage": "security"}', "m", None, 1, 1, 1)
+
+    monkeypatch.setattr(llm_client, "chat", fake_chat)
+    monkeypatch.setenv("ANALYZER_MODEL", model)
+    return seen, az.ask("ci-v1", "x", model=None)
+
+
+def test_google_prefix_selects_provider(monkeypatch):
+    seen, rec = _capture(monkeypatch, "google:gemini-3.5-flash-lite")
+    assert seen["provider"] == "google" and seen["model"] == "gemini-3.5-flash-lite"
+    assert seen["fallback_models"] is None and rec["provider"] == "google"
+
+
+def test_plain_id_stays_openrouter(monkeypatch):
+    seen, rec = _capture(monkeypatch, "meta/llama-x:free")
+    assert seen["provider"] == "openrouter" and seen["model"] == "meta/llama-x:free" and rec["provider"] == "openrouter"
