@@ -170,5 +170,6 @@ def rewrite(sample: str, notes: str) -> tuple[LLMResult, str]:
         max_tokens=int(os.getenv("MAX_OUTPUT_TOKENS", "400")),
         fallback_models=fallbacks,
         timeout_s=float(os.getenv("OPENROUTER_TIMEOUT_S", "30")),
+        provider=os.getenv("LLM_PROVIDER", "openrouter"),
     )
     return result, prompt_version

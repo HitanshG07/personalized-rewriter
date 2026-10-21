@@ -275,8 +275,9 @@ print(f"AI calls today: {d['used']} used, {d['remaining']} left of {d['limit']}"
             $manifest | kubectl --context $Ctx apply -f - | Out-Null
             if ($LASTEXITCODE -ne 0) { throw "kubectl apply failed" }
             # 2) Secret rewriter-config = k8s/app-config.env + OPENROUTER_API_KEY from .env (temp file, deleted; key never printed)
-            $keyLine = Get-Content (Join-Path $Root ".env") | Where-Object { $_ -match '^OPENROUTER_API_KEY=.+' } | Select-Object -First 1
-            if (-not $keyLine) { throw "OPENROUTER_API_KEY is missing from .env" }
+            # API keys only (OpenRouter and, if present, Google AI Studio); never printed
+            $keyLine = @(Get-Content (Join-Path $Root ".env") | Where-Object { $_ -match '^(OPENROUTER_API_KEY|GOOGLE_API_KEY)=.+' })
+            if (-not $keyLine) { throw "No API key found in .env" }
             $cfg = @(Get-Content (Join-Path $Root "k8s\app-config.env") | Where-Object { $_ -match '^[A-Z_]+=' })
             $tmp = Join-Path $env:TEMP ("rw-" + [guid]::NewGuid().ToString() + ".env")
             try {
