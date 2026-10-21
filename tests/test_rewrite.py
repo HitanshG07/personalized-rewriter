@@ -19,7 +19,7 @@ def test_valid_rewrite(with_sample, openrouter):
     assert body["model"] == "test/model" and body["prompt_version"] == "v1"
     sent = openrouter.calls[0]
     assert sent["model"] == "test/model"
-    assert sent["reasoning"] == {"enabled": False}
+    assert "reasoning" not in sent  # some free models require reasoning; it must not be forced off
     assert sent["messages"][0]["content"] == llm_client.PROMPTS["v1"]
     assert SAMPLE in sent["messages"][1]["content"] and NOTES in sent["messages"][1]["content"]
 
