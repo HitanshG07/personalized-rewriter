@@ -12,6 +12,13 @@ so main always stays green.
   .\scripts\demo.ps1 before [-NoCache]      LIVE: build the ORIGINAL image (Dockerfile.baseline), show size, user, CRITICAL CVEs
   .\scripts\demo.ps1 after  [-NoCache]      LIVE: build the AI-OPTIMIZED image (Dockerfile), show size, user, CRITICAL CVEs
 
+Kubernetes + monitoring (IA-II, Docker Desktop Kubernetes, namespace rewriter-ia2):
+  .\scripts\demo.ps1 deploy                 deploy the latest scanned main image (hitansh07) with 3 replicas + install monitoring
+  .\scripts\demo.ps1 open                   open the app at http://localhost:8002
+  .\scripts\demo.ps1 monitor                open Prometheus (localhost:9090) and Grafana (localhost:3000) in new windows
+  .\scripts\demo.ps1 traffic [-Requests N] [-Rewrites N]   send demo traffic (Rewrites use real AI calls)
+  .\scripts\demo.ps1 heal                   self-healing demo: delete one Pod and watch Kubernetes replace it
+
 Scenarios:
   ci-test   validation bug (empty notes accepted)          -> fails at: test
   security  backup helper using subprocess shell=True      -> fails at: source-security (Bandit)
@@ -21,12 +28,15 @@ Each 'break' costs 1 free AI call (the diagnosis). 'fix', 'check', 'tests' and '
 #>
 param(
     [Parameter(Position = 0, Mandatory = $true)]
-    [ValidateSet("check", "tests", "break", "status", "fix", "close", "compare", "before", "after")]
+    [ValidateSet("check", "tests", "break", "status", "fix", "close", "compare", "before", "after",
+                 "deploy", "open", "monitor", "traffic", "heal")]
     [string]$Command,
     [Parameter(Position = 1)]
     [ValidateSet("ci-test", "security", "trivy")]
     [string]$Scenario,
-    [switch]$NoCache
+    [switch]$NoCache,
+    [int]$Requests = 60,
+    [int]$Rewrites = 0
 )
 $ErrorActionPreference = "Continue"  # native tools write progress to stderr; failures are checked explicitly
 $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
@@ -115,6 +125,23 @@ function Apply-Fix {
             return "Fix: apply the AI-recommended, developer-verified Dockerfile (slim base, non-root, multi-stage)"
         }
     }
+}
+
+$Image = "hitansh07/personalized-rewriter"
+$Ctx = "docker-desktop"
+$Ns = "rewriter-ia2"
+$AppUrl = "http://127.0.0.1:8002"
+
+function Kube { & kubectl --context $Ctx -n $Ns @args }
+
+function Assert-Cluster {
+    kubectl --context $Ctx get nodes 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Docker Desktop Kubernetes is not running (Docker Desktop -> Settings -> Kubernetes -> Enable)" }
+}
+
+function Start-Forward($svc, $ports, $title) {
+    Start-Process powershell -ArgumentList "-NoExit", "-Command",
+        "`$host.UI.RawUI.WindowTitle='$title (keep open)'; kubectl --context $Ctx -n $Ns port-forward --address=127.0.0.1 service/$svc $ports"
 }
 
 function Latest-Run { (gh run list --branch (Branch) --limit 1 --json databaseId | ConvertFrom-Json)[0].databaseId }
@@ -237,6 +264,87 @@ print(f"AI calls today: {d['used']} used, {d['remaining']} left of {d['limit']}"
             foreach ($v in $vulns) { Write-Host ("   {0,-14} {1,-16} fixed in {2}" -f $v.PkgName, $v.VulnerabilityID, $v.FixedVersion) -ForegroundColor $color }
             Write-Host ""
             docker images rewriter
+        }
+        "deploy" {
+            Assert-Cluster
+            $sha = (gh run list --workflow pipeline --branch main --status success --limit 1 --json headSha | ConvertFrom-Json)[0].headSha
+            if (-not $sha) { throw "No successful pipeline run on main found" }
+            $img = "$Image`:$sha"
+            # 1) Namespace + app manifest (k8s/rewriter-ia2.yaml) with the image set to the latest scanned main build
+            $manifest = (Read-Text "k8s/rewriter-ia2.yaml") -replace "image: \S+/personalized-rewriter:\S+", "image: $img"
+            $manifest | kubectl --context $Ctx apply -f - | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw "kubectl apply failed" }
+            # 2) Secret rewriter-config = k8s/app-config.env + OPENROUTER_API_KEY from .env (temp file, deleted; key never printed)
+            $keyLine = Get-Content (Join-Path $Root ".env") | Where-Object { $_ -match '^OPENROUTER_API_KEY=.+' } | Select-Object -First 1
+            if (-not $keyLine) { throw "OPENROUTER_API_KEY is missing from .env" }
+            $cfg = @(Get-Content (Join-Path $Root "k8s\app-config.env") | Where-Object { $_ -match '^[A-Z_]+=' })
+            $tmp = Join-Path $env:TEMP ("rw-" + [guid]::NewGuid().ToString() + ".env")
+            try {
+                [IO.File]::WriteAllText($tmp, (($cfg + $keyLine) -join "`n") + "`n", $Utf8)
+                Kube create secret generic rewriter-config "--from-env-file=$tmp" --dry-run=client -o yaml | kubectl --context $Ctx apply -f - | Out-Null
+                if ($LASTEXITCODE -ne 0) { throw "could not create Secret rewriter-config" }
+            } finally { Remove-Item $tmp -Force -ErrorAction SilentlyContinue }
+            Say "Secret rewriter-config updated (key not shown)."
+            # 3) Restart so the Pods pick up the Secret, then wait for 3 ready replicas
+            Kube annotate deployment/rewriter "git-sha=$sha" --overwrite | Out-Null
+            Kube rollout restart deployment/rewriter | Out-Null
+            Say "Rolling out $img ..." "Yellow"
+            Kube rollout status deployment/rewriter --timeout=300s
+            if ($LASTEXITCODE -ne 0) { throw "rollout did not finish; check: kubectl --context $Ctx -n $Ns get pods" }
+            Kube get pods -l app=rewriter -o wide
+            # 4) Monitoring stack (scripts/install_ia2_monitoring.py; safe to re-run)
+            Say "Installing/updating Prometheus + Grafana ..." "Yellow"
+            & $Python (Join-Path $Root "scripts\install_ia2_monitoring.py")
+            Say "Deployed. App: $AppUrl   Next: .\scripts\demo.ps1 open / monitor" "Green"
+        }
+        "open" {
+            Start-Process "$AppUrl/"
+            Say "App: $AppUrl   (Swagger: $AppUrl/docs)" "Green"
+        }
+        "monitor" {
+            Start-Forward "prometheus" "9090:9090" "Prometheus port-forward"
+            Start-Forward "grafana" "3000:3000" "Grafana port-forward"
+            Start-Sleep 4
+            $sec = Kube get secret ia2-grafana-admin -o json | ConvertFrom-Json
+            $pw = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($sec.data.'admin-password'))
+            Say "Prometheus: http://localhost:9090/targets" "Green"
+            Say "Grafana:    http://localhost:3000   user: admin   password: $pw" "Green"
+            Say "            Dashboards -> DevOps IA2 -> Personalized Rewriter - IA2" "Green"
+        }
+        "traffic" {
+            $ok = 0; $fail = 0
+            Say "Sending $Requests sample+health requests and $Rewrites rewrites to $AppUrl ..." "Yellow"
+            $sample = "I like keeping my communication simple and direct. I generally avoid unnecessary wording."
+            for ($i = 1; $i -le $Requests; $i++) {
+                try {
+                    Invoke-RestMethod -Method Post -Uri "$AppUrl/sample" -ContentType "application/json" -Body (@{ user_id = "demo$($i % 5)"; sample = $sample } | ConvertTo-Json) | Out-Null
+                    Invoke-RestMethod -Uri "$AppUrl/health" | Out-Null
+                    $ok++
+                } catch { $fail++ }
+                Write-Host -NoNewline "."
+            }
+            Write-Host ""
+            for ($i = 1; $i -le $Rewrites; $i++) {
+                try {
+                    $r = Invoke-RestMethod -Method Post -Uri "$AppUrl/rewrite" -ContentType "application/json" -Body (@{ user_id = "demo1"; text = "meeting moved to friday`nreport due monday`ninform the team" } | ConvertTo-Json)
+                    Say ("  rewrite {0}: {1} ms ({2})" -f $i, $r.latency_ms, $r.model) "DarkGray"
+                } catch { Say ("  rewrite {0}: failed ({1})" -f $i, $_.ErrorDetails.Message) "DarkYellow" }
+                Start-Sleep 3
+            }
+            Say "Done: $ok ok, $fail failed." $(if ($fail -eq 0) { "Green" } else { "Yellow" })
+        }
+        "heal" {
+            Assert-Cluster
+            Say "Pods BEFORE:" "Yellow"; Kube get pods -l app=rewriter
+            $victim = (Kube get pods -l app=rewriter -o jsonpath="{.items[0].metadata.name}")
+            Say "Deleting $victim (simulating a crash)..." "Red"
+            Kube delete pod $victim --wait=false | Out-Null
+            for ($t = 0; $t -lt 45; $t++) {
+                Start-Sleep 2
+                $ready = @(Kube get pods -l app=rewriter -o jsonpath="{range .items[*]}{.status.containerStatuses[0].ready}{'\n'}{end}" | Where-Object { $_ -eq "true" }).Count
+                if ($ready -ge 3 -and -not ((Kube get pods -l app=rewriter -o name) -match [regex]::Escape($victim))) { break }
+            }
+            Say "Pods AFTER (a new Pod replaced $victim):" "Green"; Kube get pods -l app=rewriter
         }
         "compare" {
             Run-Python @'
