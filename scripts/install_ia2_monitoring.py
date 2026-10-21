@@ -46,7 +46,7 @@ def configmap(name, data):
 
 def render_resources():
     """Render deterministic ConfigMaps and Deployment checksums; contains no secrets."""
-    prom = {"prometheus.yml": (CONFIG / "prometheus.yml").read_text(encoding="utf-8")}
+    prom = {name: (CONFIG / name).read_text(encoding="utf-8") for name in ("prometheus.yml", "alert-rules.yml")}
     provisioning = {
         "datasource.yml": (CONFIG / "grafana-datasource.yml").read_text(encoding="utf-8"),
         "dashboards.yml": (CONFIG / "grafana-dashboard-provider.yml").read_text(encoding="utf-8"),

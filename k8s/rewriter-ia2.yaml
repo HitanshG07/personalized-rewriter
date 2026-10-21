@@ -60,7 +60,7 @@ spec:
       # Prepare permissions on the writable data volume.
       initContainers:
         - name: prepare-storage
-          image: sauravbanerjee28/personalized-rewriter:d5f0de01b73ac26dc06130c8afa63a05238eac1e
+          image: hitansh07/personalized-rewriter:1c1a0203a10a9a7297623c59656a5ee97402bc41
           imagePullPolicy: IfNotPresent
           command:
             - python
@@ -83,7 +83,7 @@ spec:
 
       containers:
         - name: rewriter
-          image: sauravbanerjee28/personalized-rewriter:d5f0de01b73ac26dc06130c8afa63a05238eac1e
+          image: hitansh07/personalized-rewriter:1c1a0203a10a9a7297623c59656a5ee97402bc41
           imagePullPolicy: IfNotPresent
 
           ports:

@@ -1,0 +1,142 @@
+[
+  {
+    "sample_id": "s01",
+    "category": "formal email",
+    "writing_sample": "I hope this message finds you well. I am writing to follow up on our previous correspondence regarding the quarterly financial review. Please advise if you require any additional documentation at your earliest convenience.",
+    "rough_notes": "follow up on financial review\nquarterly results\nneed docs by friday\nreply to rajesh@company.com",
+    "expected_tone": "professional, formal, polite"
+  },
+  {
+    "sample_id": "s02",
+    "category": "casual chat message",
+    "writing_sample": "hey!! just got home and literally i'm so tired lol. making coffee and gonna chill. u free later? wanna grab dinner or smth?? 😄",
+    "rough_notes": "got home tired\nmaking coffee\nwanna hang out\nmaybe dinner later",
+    "expected_tone": "casual, friendly, informal, energetic"
+  },
+  {
+    "sample_id": "s03",
+    "category": "academic summary",
+    "writing_sample": "The study demonstrates a statistically significant correlation between socioeconomic factors and academic achievement rates. Through multivariate regression analysis, we identified three key variables that account for approximately 67% of observed variance in student outcomes.",
+    "rough_notes": "socioeconomic factors affect grades\nmultivariate regression analysis used\n3 key variables found\n67% variance explained",
+    "expected_tone": "academic, objective, formal, technical"
+  },
+  {
+    "sample_id": "s04",
+    "category": "LinkedIn post",
+    "writing_sample": "Excited to announce that I've just completed my certification in data science! 🎓 This journey has taught me the importance of continuous learning and persistence. Looking forward to applying these skills in my upcoming role. Grateful for all the mentors along the way!",
+    "rough_notes": "finished data science cert\nlearned a lot\nstarting new role next month\nthankful to mentors",
+    "expected_tone": "enthusiastic, professional, grateful, forward-looking"
+  },
+  {
+    "sample_id": "s05",
+    "category": "apology note",
+    "writing_sample": "I sincerely apologize for missing our meeting yesterday. There is no excuse for my oversight, and I recognize the inconvenience this caused you and the team. I would like to make this right and propose a time to reschedule at your earliest convenience.",
+    "rough_notes": "missed yesterday's meeting\nwas my fault\nvery sorry\nwanna reschedule asap",
+    "expected_tone": "apologetic, sincere, remorseful, professional"
+  },
+  {
+    "sample_id": "s06",
+    "category": "meeting update",
+    "writing_sample": "Team sync completed successfully. We reviewed Q4 roadmap items, and engineering committed to delivery by Nov 15. Design will have mockups by Oct 29. Action items assigned to Sarah and Marcus with clear deadlines.",
+    "rough_notes": "Q4 roadmap discussed\nengineering done nov 15\ndesign mockups oct 29\nsarah and marcus assigned tasks",
+    "expected_tone": "informative, concise, action-oriented"
+  },
+  {
+    "sample_id": "s07",
+    "category": "product feedback",
+    "writing_sample": "The app is fantastic overall, but I've noticed the checkout flow is unnecessarily complicated with too many steps. It took me nearly five minutes to complete a simple purchase. Streamlining this would significantly improve user experience.",
+    "rough_notes": "checkout has too many steps\ntook 5 min to buy\nshould be faster\nneeds simplification",
+    "expected_tone": "constructive, honest, helpful, specific"
+  },
+  {
+    "sample_id": "s08",
+    "category": "cover-letter line",
+    "writing_sample": "My passion for sustainable technology and proven track record in environmental initiatives make me an ideal candidate for this position. I am eager to contribute my expertise to your organization's mission.",
+    "rough_notes": "passionate about sustainability\ntrack record in green tech\nwant to join your team\nhave relevant skills",
+    "expected_tone": "ambitious, professional, confident"
+  },
+  {
+    "sample_id": "s09",
+    "category": "project status report",
+    "writing_sample": "Current status: 65% complete. Backend API integration is finished on schedule. Frontend development encountered minor delays due to dependency issues, now resolved. We expect to achieve full completion by the agreed deadline of November 5th.",
+    "rough_notes": "65% done\nAPI done\nfrontend had delays but fixed\nfinish nov 5",
+    "expected_tone": "factual, transparent, professional, reassuring"
+  },
+  {
+    "sample_id": "s10",
+    "category": "thank-you note",
+    "writing_sample": "Thank you so much for taking the time to interview me last week. I truly appreciated learning more about the team and the exciting projects you're working on. Your insights about company culture were particularly valuable.",
+    "rough_notes": "thanks for interview last week\nlearned lots\nreal excited about projects\nappreciated your insights",
+    "expected_tone": "gracious, warm, professional, appreciative"
+  },
+  {
+    "sample_id": "s11",
+    "category": "complaint",
+    "writing_sample": "I am extremely disappointed with the service I received at your restaurant last Friday. Our order arrived 45 minutes late, the food was cold, and the waitstaff seemed disorganized. This experience was completely unacceptable and falls far below your usual standards.",
+    "rough_notes": "awful service fri night\norder late 45 min\nfood cold\nstaff disorganized\nwant refund",
+    "expected_tone": "frustrated, disappointed, direct, assertive"
+  },
+  {
+    "sample_id": "s12",
+    "category": "event invitation",
+    "writing_sample": "You are cordially invited to celebrate the marriage of Elena Rodriguez and Thomas Chen on Saturday, November 18th at four o'clock in the evening at The Grand Ballroom. Reception to follow. RSVP by November 4th.",
+    "rough_notes": "Elena & Thomas getting married\nnov 18 at 4pm\nthe grand ballroom\nrsvp by nov 4",
+    "expected_tone": "formal, elegant, ceremonial"
+  },
+  {
+    "sample_id": "s13",
+    "category": "technical bug report",
+    "writing_sample": "Bug ID: 8374. When uploading files larger than 500MB, the application crashes with error code 0x500. This occurs consistently across all browsers tested (Chrome, Firefox, Safari). Reproduction steps and logs attached.",
+    "rough_notes": "file upload crash\n500MB limit causes error 0x500\nhappens in all browsers\nreproduction steps attached",
+    "expected_tone": "technical, precise, systematic"
+  },
+  {
+    "sample_id": "s14",
+    "category": "travel plan",
+    "writing_sample": "We're planning a two-week trip to Japan in March. Thinking of visiting Tokyo, Kyoto, and Osaka. We'll stay in hotels and use the rail system to get around. Budget is roughly 8000 dollars for flights and accommodations.",
+    "rough_notes": "japan trip march\ntokyo kyoto osaka\n2 weeks\nbudget 8k\ntrains and hotels",
+    "expected_tone": "casual, excited, planning-focused"
+  },
+  {
+    "sample_id": "s15",
+    "category": "study notes",
+    "writing_sample": "Chapter 3: Photosynthesis occurs in chloroplasts via light-dependent and light-independent reactions. Key enzymes: RuBisCO, ATP synthase. Calvin cycle requires CO2, ATP, NADPH. Memorize the three stages for the exam.",
+    "rough_notes": "photosynthesis in chloroplasts\nlight dependent and independent\nkey enzymes to know\ncalvin cycle 3 stages\nfor exam",
+    "expected_tone": "structured, educational, focused, concise"
+  },
+  {
+    "sample_id": "s16",
+    "category": "customer support reply",
+    "writing_sample": "Thank you for contacting us regarding your billing issue. I understand your concern about the duplicate charge on your account. I have submitted a request to our finance team, and you can expect a resolution within 3-5 business days. We appreciate your patience.",
+    "rough_notes": "customer charged twice\nerror in billing\nsubmitting to finance team\n3-5 days to fix",
+    "expected_tone": "helpful, professional, reassuring, empathetic"
+  },
+  {
+    "sample_id": "s17",
+    "category": "team announcement",
+    "writing_sample": "Announcing that Marcus Johnson has been promoted to Senior Engineering Manager, effective immediately. Marcus brings nine years of experience and has been instrumental in our recent product launches. Congratulations to Marcus, and welcome to the leadership team!",
+    "rough_notes": "marcus promoted\nsenior eng manager\n9 yrs experience\ngreat with products",
+    "expected_tone": "celebratory, professional, welcoming"
+  },
+  {
+    "sample_id": "s18",
+    "category": "personal journal",
+    "writing_sample": "Today was absolutely exhausting but in a good way. I finally finished that project I've been stressing about for weeks. Feeling proud and relieved. Tomorrow I'll sleep in and maybe take a walk by the park. I need to remember to be kinder to myself.",
+    "rough_notes": "finished big project\nfeeling relieved\nwas stressful\nwill rest tomorrow\nbe nice to myself",
+    "expected_tone": "reflective, honest, introspective, hopeful"
+  },
+  {
+    "sample_id": "s19",
+    "category": "recipe note",
+    "writing_sample": "Mushroom risotto: Sauté diced onions and garlic in butter for 2 minutes. Add arborio rice and stir for 1 minute. Add warm stock one ladle at a time, stirring constantly until creamy. Season with salt, pepper, and parmesan. Total time: 25 minutes.",
+    "rough_notes": "mushroom risotto\nsauté onions garlic 2min\nadd rice stir 1min\nadd stock gradually\nseason with salt pepper parm\n25min total",
+    "expected_tone": "instructional, practical, clear, precise"
+  },
+  {
+    "sample_id": "s20",
+    "category": "recommendation request",
+    "writing_sample": "I would greatly appreciate a letter of recommendation from you for my graduate school applications. Your perspective on my technical abilities and teamwork would be invaluable. The deadline is January 10th, and I'm happy to provide any materials you might need.",
+    "rough_notes": "need recommendation letter\ngrad school applications\ndeadline jan 10\nsend materials if needed\nthank you",
+    "expected_tone": "respectful, polite, appreciative, formal"
+  }
+]

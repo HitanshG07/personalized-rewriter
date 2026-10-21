@@ -117,6 +117,21 @@ isolated measurement of model inference time. The target count measures metrics
 reachability, not Kubernetes readiness or OpenRouter availability. `No data yet`
 can occur before there are enough scrape samples or requests for a rate.
 
+## AI panels
+
+The dashboard has six extra panels for the AI side: OpenRouter latency p95,
+AI rewrites per minute, rewrite and OpenRouter failures by reason, AI tokens
+per minute by type, and app response time p95. They stay empty until someone
+uses the rewrite feature.
+
+## Alerts
+
+`k8s/monitoring/alert-rules.yml` is loaded by Prometheus (see the Alerts page
+in Prometheus). Four warning alerts: fewer than 3 healthy pods for 1 minute,
+more than 10 percent 5xx responses for 2 minutes, more than 5 OpenRouter
+failures in 10 minutes, and p95 response time above 5 seconds for 5 minutes.
+No notifications are sent; alerts are only visible in the Prometheus UI.
+
 ## Resources and persistence
 
 Images are pinned to Prometheus `v3.13.5`, Grafana OSS `13.2.4`, and BusyBox
