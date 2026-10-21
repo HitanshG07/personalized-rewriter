@@ -1,0 +1,302 @@
+{
+  "prompt_v1|s01": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v3|s01": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s01": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v3|s02": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v1|s02": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s02": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v1|s03": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v3|s03": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s03": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v3|s04": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s04": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v1|s04": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 4
+  },
+  "prompt_v2|s05": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v1|s05": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v3|s05": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v1|s06": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v2|s06": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v3|s06": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s07": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v1|s07": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v3|s07": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v3|s08": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v1|s08": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v2|s08": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v3|s09": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s09": {
+    "quality": 3,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v1|s09": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v1|s10": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 3
+  },
+  "prompt_v3|s10": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s10": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v2|s11": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v1|s11": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v3|s11": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v1|s12": {
+    "quality": 5,
+    "meaning": 2,
+    "tone": 5
+  },
+  "prompt_v3|s12": {
+    "quality": 5,
+    "meaning": 3,
+    "tone": 5
+  },
+  "prompt_v2|s12": {
+    "quality": 5,
+    "meaning": 3,
+    "tone": 5
+  },
+  "prompt_v2|s13": {
+    "quality": 5,
+    "meaning": 3,
+    "tone": 5
+  },
+  "prompt_v1|s13": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v3|s13": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v1|s14": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v3|s14": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v2|s14": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v3|s15": {
+    "quality": 3,
+    "meaning": 5,
+    "tone": 3
+  },
+  "prompt_v1|s15": {
+    "quality": 3,
+    "meaning": 4,
+    "tone": 4
+  },
+  "prompt_v2|s15": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 4
+  },
+  "prompt_v1|s16": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v3|s16": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s16": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v1|s17": {
+    "quality": 4,
+    "meaning": 2,
+    "tone": 5
+  },
+  "prompt_v2|s17": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v3|s17": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v3|s18": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 3
+  },
+  "prompt_v1|s18": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "prompt_v2|s18": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v1|s19": {
+    "quality": 5,
+    "meaning": 3,
+    "tone": 5
+  },
+  "prompt_v3|s19": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v2|s19": {
+    "quality": 5,
+    "meaning": 2,
+    "tone": 5
+  },
+  "prompt_v1|s20": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "prompt_v2|s20": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "prompt_v3|s20": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  }
+}

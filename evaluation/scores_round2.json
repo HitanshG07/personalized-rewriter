@@ -1,0 +1,257 @@
+{
+  "model_B|s01": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s01": {
+    "quality": 4,
+    "meaning": 3,
+    "tone": 5
+  },
+  "model_A|s01": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 5
+  },
+  "model_C|s03": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_B|s03": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s03": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_B|s04": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s04": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_C|s04": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_A|s05": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s05": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_B|s05": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_B|s06": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s06": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_A|s06": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_C|s07": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 4
+  },
+  "model_A|s07": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_B|s07": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s08": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_B|s08": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s08": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_A|s09": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 5
+  },
+  "model_B|s09": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s09": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 5
+  },
+  "model_A|s10": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_B|s10": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s10": {
+    "quality": 5,
+    "meaning": 4,
+    "tone": 5
+  },
+  "model_A|s12": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_B|s12": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s12": {
+    "quality": 4,
+    "meaning": 3,
+    "tone": 5
+  },
+  "model_C|s14": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_B|s14": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s14": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 5
+  },
+  "model_C|s15": {
+    "quality": 3,
+    "meaning": 3,
+    "tone": 3
+  },
+  "model_B|s15": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s15": {
+    "quality": 3,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s16": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_B|s16": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s16": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_C|s17": {
+    "quality": 4,
+    "meaning": 3,
+    "tone": 4
+  },
+  "model_B|s17": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s17": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s18": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 4
+  },
+  "model_B|s18": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s18": {
+    "quality": 4,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_B|s19": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_A|s19": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_C|s19": {
+    "quality": 4,
+    "meaning": 2,
+    "tone": 5
+  },
+  "model_A|s20": {
+    "quality": 5,
+    "meaning": 5,
+    "tone": 5
+  },
+  "model_B|s20": {
+    "quality": 2,
+    "meaning": 5,
+    "tone": 4
+  },
+  "model_C|s20": {
+    "quality": 4,
+    "meaning": 4,
+    "tone": 5
+  }
+}

@@ -1,0 +1,105 @@
+{
+  "seed": 669691149,
+  "order": {
+    "s01": [
+      "prompt_v1",
+      "prompt_v3",
+      "prompt_v2"
+    ],
+    "s02": [
+      "prompt_v3",
+      "prompt_v1",
+      "prompt_v2"
+    ],
+    "s03": [
+      "prompt_v1",
+      "prompt_v3",
+      "prompt_v2"
+    ],
+    "s04": [
+      "prompt_v3",
+      "prompt_v2",
+      "prompt_v1"
+    ],
+    "s05": [
+      "prompt_v2",
+      "prompt_v1",
+      "prompt_v3"
+    ],
+    "s06": [
+      "prompt_v1",
+      "prompt_v2",
+      "prompt_v3"
+    ],
+    "s07": [
+      "prompt_v2",
+      "prompt_v1",
+      "prompt_v3"
+    ],
+    "s08": [
+      "prompt_v3",
+      "prompt_v1",
+      "prompt_v2"
+    ],
+    "s09": [
+      "prompt_v3",
+      "prompt_v2",
+      "prompt_v1"
+    ],
+    "s10": [
+      "prompt_v1",
+      "prompt_v3",
+      "prompt_v2"
+    ],
+    "s11": [
+      "prompt_v2",
+      "prompt_v1",
+      "prompt_v3"
+    ],
+    "s12": [
+      "prompt_v1",
+      "prompt_v3",
+      "prompt_v2"
+    ],
+    "s13": [
+      "prompt_v2",
+      "prompt_v1",
+      "prompt_v3"
+    ],
+    "s14": [
+      "prompt_v1",
+      "prompt_v3",
+      "prompt_v2"
+    ],
+    "s15": [
+      "prompt_v3",
+      "prompt_v1",
+      "prompt_v2"
+    ],
+    "s16": [
+      "prompt_v1",
+      "prompt_v3",
+      "prompt_v2"
+    ],
+    "s17": [
+      "prompt_v1",
+      "prompt_v2",
+      "prompt_v3"
+    ],
+    "s18": [
+      "prompt_v3",
+      "prompt_v1",
+      "prompt_v2"
+    ],
+    "s19": [
+      "prompt_v1",
+      "prompt_v3",
+      "prompt_v2"
+    ],
+    "s20": [
+      "prompt_v1",
+      "prompt_v2",
+      "prompt_v3"
+    ]
+  }
+}

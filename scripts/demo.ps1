@@ -318,8 +318,8 @@ print(f"AI calls today: {d['used']} used, {d['remaining']} left of {d['limit']}"
             $sample = "I like keeping my communication simple and direct. I generally avoid unnecessary wording."
             for ($i = 1; $i -le $Requests; $i++) {
                 try {
-                    Invoke-RestMethod -Method Post -Uri "$AppUrl/sample" -ContentType "application/json" -Body (@{ user_id = "demo$($i % 5)"; sample = $sample } | ConvertTo-Json) | Out-Null
-                    Invoke-RestMethod -Uri "$AppUrl/health" | Out-Null
+                    Invoke-RestMethod -DisableKeepAlive -Method Post -Uri "$AppUrl/sample" -ContentType "application/json" -Body (@{ user_id = "demo$($i % 5)"; sample = $sample } | ConvertTo-Json) | Out-Null
+                    Invoke-RestMethod -DisableKeepAlive -Uri "$AppUrl/health" | Out-Null
                     $ok++
                 } catch { $fail++ }
                 Write-Host -NoNewline "."
@@ -327,7 +327,7 @@ print(f"AI calls today: {d['used']} used, {d['remaining']} left of {d['limit']}"
             Write-Host ""
             for ($i = 1; $i -le $Rewrites; $i++) {
                 try {
-                    $r = Invoke-RestMethod -Method Post -Uri "$AppUrl/rewrite" -ContentType "application/json" -Body (@{ user_id = "demo1"; text = "meeting moved to friday`nreport due monday`ninform the team" } | ConvertTo-Json)
+                    $r = Invoke-RestMethod -DisableKeepAlive -Method Post -Uri "$AppUrl/rewrite" -ContentType "application/json" -Body (@{ user_id = "demo1"; text = "meeting moved to friday`nreport due monday`ninform the team" } | ConvertTo-Json)
                     Say ("  rewrite {0}: {1} ms ({2})" -f $i, $r.latency_ms, $r.model) "DarkGray"
                 } catch { Say ("  rewrite {0}: failed ({1})" -f $i, $_.ErrorDetails.Message) "DarkYellow" }
                 Start-Sleep 3
