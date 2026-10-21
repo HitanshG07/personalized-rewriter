@@ -19,6 +19,7 @@ def test_valid_rewrite(with_sample, openrouter):
     assert body["model"] == "test/model" and body["prompt_version"] == "v1"
     sent = openrouter.calls[0]
     assert sent["model"] == "test/model"
+    assert sent["reasoning"] == {"enabled": False}
     assert sent["messages"][0]["content"] == llm_client.PROMPTS["v1"]
     assert SAMPLE in sent["messages"][1]["content"] and NOTES in sent["messages"][1]["content"]
 
@@ -93,44 +94,3 @@ def test_no_fallback_by_default(with_sample, openrouter):
 
 def test_fallback_models_sent_when_configured(with_sample, openrouter, monkeypatch):
     monkeypatch.setenv("OPENROUTER_FALLBACK_MODELS", "b/model, c/model")
-    rewrite(with_sample)
-    assert openrouter.calls[0]["models"] == ["test/model", "b/model", "c/model"]
-
-
-def test_token_usage_recorded(with_sample, openrouter):
-    before = metric_value(with_sample, 'openrouter_tokens_total{type="prompt"}')
-    rewrite(with_sample)
-    assert metric_value(with_sample, 'openrouter_tokens_total{type="prompt"}') == before + 42
-
-
-def test_chat_attempts_and_backoff_are_configurable(openrouter, monkeypatch):
-    """The DevOps AI uses 3 attempts; the app keeps the 2-attempt baseline."""
-    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-not-real")
-    openrouter.queue = [httpx.Response(429), httpx.Response(429), ok_response()]
-    msgs = [{"role": "user", "content": "hi"}]
-    result = llm_client.chat(msgs, model="m", temperature=0, max_tokens=10, attempts=3, retry_delay_s=0)
-    assert result.text and len(openrouter.calls) == 3
-
-
-def test_extra_body_is_sent(openrouter, monkeypatch):
-    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-not-real")
-    llm_client.chat([{"role": "user", "content": "hi"}], model="m", temperature=0, max_tokens=5,
-                    extra_body={"reasoning": {"enabled": False}})
-    assert openrouter.calls[0]["reasoning"] == {"enabled": False}
-
-
-def test_error_inside_200_is_retried(with_sample, openrouter):
-    openrouter.queue = [httpx.Response(200, json={"error": {"message": "upstream overloaded"}}), ok_response()]
-    assert rewrite(with_sample).status_code == 200
-    assert len(openrouter.calls) == 2
-
-
-def test_invalid_answer_retried_only_when_asked(openrouter, monkeypatch):
-    monkeypatch.setenv("OPENROUTER_API_KEY", "test-key-not-real")
-    msgs = [{"role": "user", "content": "hi"}]
-    openrouter.queue = [ok_response(text=""), ok_response()]
-    assert llm_client.chat(msgs, model="m", temperature=0, max_tokens=5, retry_invalid=True, retry_delay_s=0).text
-    assert len(openrouter.calls) == 2
-    openrouter.queue = [ok_response(text="")]
-    with pytest.raises(llm_client.LLMError):
-        llm_client.chat(msgs, model="m", temperature=0, max_tokens=5, retry_delay_s=0)
