@@ -1,0 +1,12 @@
+apiVersion: 1
+providers:
+- name: ia2-files
+  orgId: 1
+  folder: DevOps IA2
+  folderUid: devops-ia2
+  type: file
+  disableDeletion: true
+  allowUiUpdates: false
+  updateIntervalSeconds: 30
+  options:
+    path: /var/lib/grafana/dashboards

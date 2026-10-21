@@ -1,0 +1,158 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rewriter-ia2
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rewriter-data
+  namespace: rewriter-ia2
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rewriter
+  namespace: rewriter-ia2
+spec:
+  replicas: 3
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+  selector:
+    matchLabels:
+      app: rewriter
+
+  template:
+    metadata:
+      labels:
+        app: rewriter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: /metrics
+
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 75
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
+      # Prepare storage permissions before starting the application.
+      initContainers:
+        - name: prepare-storage
+          image: sauravbanerjee28/personalized-rewriter:d5f0de01b73ac26dc06130c8afa63a05238eac1e
+          command:
+            - python
+            - -c
+            - "import os; os.chown('/data', 10001, 10001); os.chmod('/data', 0o770)"
+          securityContext:
+            runAsNonRoot: false
+            runAsUser: 0
+            runAsGroup: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [CHOWN, FOWNER]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+      containers:
+        - name: rewriter
+          image: sauravbanerjee28/personalized-rewriter:d5f0de01b73ac26dc06130c8afa63a05238eac1e
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          envFrom:
+            - secretRef:
+                name: rewriter-config
+
+          env:
+            - name: DB_PATH
+              value: /app/data/samples.db
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            timeoutSeconds: 3
+            failureThreshold: 60
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+
+          livenessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 3
+
+          lifecycle:
+            preStop:
+              exec:
+                command: [python, -c, "import time; time.sleep(5)"]
+
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: rewriter-data
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rewriter
+  namespace: rewriter-ia2
+spec:
+  type: LoadBalancer
+  selector:
+    app: rewriter
+  ports:
+    - name: http
+      port: 8002
+      targetPort: http

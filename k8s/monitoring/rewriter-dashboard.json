@@ -1,0 +1,444 @@
+{
+  "kind": "Dashboard",
+  "apiVersion": "dashboard.grafana.app/v1",
+  "metadata": {
+    "name": "ia2-rewriter"
+  },
+  "spec": {
+    "title": "Personalized Rewriter - IA2",
+    "description": "Live application metrics for the three-pod Docker Desktop deployment.",
+    "tags": [
+      "devops",
+      "ia2",
+      "personalized-rewriter"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 41,
+    "version": 1,
+    "editable": false,
+    "refresh": "5s",
+    "time": {
+      "from": "now-10m",
+      "to": "now"
+    },
+    "timepicker": {},
+    "templating": {
+      "list": []
+    },
+    "annotations": {
+      "list": []
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Reachable app metric targets",
+        "description": "Expected steady state: 3. A successful metrics scrape does not verify the external AI service.",
+        "type": "stat",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ia2-prometheus"
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 6,
+          "h": 5
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "min": 0,
+            "decimals": 0,
+            "noValue": "No data yet",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 1
+                },
+                {
+                  "color": "green",
+                  "value": 3
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "ia2-prometheus"
+            },
+            "expr": "sum(up{job=\"rewriter\"}) or vector(0)",
+            "legendFormat": "",
+            "range": true,
+            "editorMode": "code"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Application requests / minute",
+        "description": "One-minute rate multiplied by 60. Health probes and metrics scrapes are excluded.",
+        "type": "stat",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ia2-prometheus"
+        },
+        "gridPos": {
+          "x": 6,
+          "y": 0,
+          "w": 6,
+          "h": 5
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "suffix:req/min",
+            "min": 0,
+            "decimals": 1,
+            "noValue": "No data yet",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "ia2-prometheus"
+            },
+            "expr": "sum(rate(requests_total{job=\"rewriter\",endpoint!~\"/metrics|/health\"}[1m])) * 60 or vector(0)",
+            "legendFormat": "",
+            "range": true,
+            "editorMode": "code"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Average response time",
+        "description": "Weighted mean across pods and application routes over one minute. Health and metrics routes are excluded.",
+        "type": "stat",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ia2-prometheus"
+        },
+        "gridPos": {
+          "x": 12,
+          "y": 0,
+          "w": 6,
+          "h": 5
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "min": 0,
+            "decimals": 1,
+            "noValue": "No data yet",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": null
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "ia2-prometheus"
+            },
+            "expr": "1000 * sum(rate(request_latency_seconds_sum{job=\"rewriter\",endpoint!~\"/metrics|/health\"}[1m])) / clamp_min(sum(rate(request_latency_seconds_count{job=\"rewriter\",endpoint!~\"/metrics|/health\"}[1m])), 1e-9)",
+            "legendFormat": "",
+            "range": true,
+            "editorMode": "code"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "HTTP error rate",
+        "description": "Percentage of application responses with HTTP 4xx or 5xx status over one minute.",
+        "type": "stat",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ia2-prometheus"
+        },
+        "gridPos": {
+          "x": 18,
+          "y": 0,
+          "w": 6,
+          "h": 5
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "decimals": 1,
+            "noValue": "No data yet",
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "orange",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": ""
+          },
+          "orientation": "auto",
+          "textMode": "auto",
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto"
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "ia2-prometheus"
+            },
+            "expr": "100 * (sum(rate(requests_total{job=\"rewriter\",endpoint!~\"/metrics|/health\",status=~\"[45]..\"}[1m])) or vector(0)) / clamp_min(sum(rate(requests_total{job=\"rewriter\",endpoint!~\"/metrics|/health\"}[1m])), 1e-9) or vector(0)",
+            "legendFormat": "",
+            "range": true,
+            "editorMode": "code"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Application requests / minute by pod",
+        "description": "Each pod is scraped independently. Replacement pods appear automatically.",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ia2-prometheus"
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 5,
+          "w": 12,
+          "h": 9
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "suffix:req/min",
+            "min": 0,
+            "decimals": 1,
+            "noValue": "No data yet",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": null
+                }
+              ]
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "showPoints": "never",
+              "spanNulls": false
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "ia2-prometheus"
+            },
+            "expr": "sum by (pod) (rate(requests_total{job=\"rewriter\",endpoint!~\"/metrics|/health\"}[1m])) * 60",
+            "legendFormat": "{{pod}}",
+            "range": true,
+            "editorMode": "code"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Average response time over time",
+        "description": "Weighted mean across application routes. A large AI response time can raise this value.",
+        "type": "timeseries",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "ia2-prometheus"
+        },
+        "gridPos": {
+          "x": 12,
+          "y": 5,
+          "w": 12,
+          "h": 9
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "min": 0,
+            "decimals": 1,
+            "noValue": "No data yet",
+            "color": {
+              "mode": "palette-classic"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": null
+                }
+              ]
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "showPoints": "never",
+              "spanNulls": false
+            }
+          },
+          "overrides": []
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "refId": "A",
+            "datasource": {
+              "type": "prometheus",
+              "uid": "ia2-prometheus"
+            },
+            "expr": "1000 * sum(rate(request_latency_seconds_sum{job=\"rewriter\",endpoint!~\"/metrics|/health\"}[1m])) / clamp_min(sum(rate(request_latency_seconds_count{job=\"rewriter\",endpoint!~\"/metrics|/health\"}[1m])), 1e-9)",
+            "legendFormat": "Average",
+            "range": true,
+            "editorMode": "code"
+          }
+        ]
+      }
+    ]
+  }
+}

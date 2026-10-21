@@ -1,0 +1,402 @@
+# Apply with scripts/install_ia2_monitoring.py; it supplies ConfigMaps, credentials and config checksums.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ia2-prometheus
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ia2-prometheus-discovery
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+rules:
+- apiGroups:
+  - ''
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ia2-prometheus-discovery
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ia2-prometheus-discovery
+subjects:
+- kind: ServiceAccount
+  name: ia2-prometheus
+  namespace: rewriter-ia2
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+    app: prometheus
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: rewriter-ia2-monitoring
+        app: prometheus
+      annotations:
+        checksum/config: __PROMETHEUS_CONFIG_SHA256__
+    spec:
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        fsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: prepare-storage
+        image: busybox:1.37.0
+        imagePullPolicy: IfNotPresent
+        command:
+        - sh
+        - -c
+        - chown 65534:65534 /data && chmod 0770 /data
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - FOWNER
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      - name: validate-config
+        image: prom/prometheus:v3.13.5
+        imagePullPolicy: IfNotPresent
+        command:
+        - /bin/promtool
+        args:
+        - check
+        - config
+        - --syntax-only
+        - /etc/prometheus/prometheus.yml
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+          readOnly: true
+      containers:
+      - name: prometheus
+        image: prom/prometheus:v3.13.5
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 9090
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: config
+          mountPath: /etc/prometheus
+          readOnly: true
+        - name: data
+          mountPath: /prometheus
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 768Mi
+        startupProbe:
+          httpGet:
+            path: /-/ready
+            port: http
+          periodSeconds: 5
+          failureThreshold: 90
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /-/ready
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /-/healthy
+            port: http
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 5
+        args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --storage.tsdb.retention.time=3d
+        - --storage.tsdb.retention.size=512MB
+      volumes:
+      - name: config
+        configMap:
+          name: ia2-prometheus-config
+      - name: data
+        persistentVolumeClaim:
+          claimName: prometheus-data
+      serviceAccountName: ia2-prometheus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+    app: prometheus
+spec:
+  type: ClusterIP
+  selector:
+    app: prometheus
+  ports:
+  - name: http
+    port: 9090
+    targetPort: http
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+    app: grafana
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: rewriter-ia2-monitoring
+        app: grafana
+      annotations:
+        checksum/config: __GRAFANA_CONFIG_SHA256__
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+      - name: prepare-storage
+        image: busybox:1.37.0
+        imagePullPolicy: IfNotPresent
+        command:
+        - sh
+        - -c
+        - chown 472:472 /data && chmod 0770 /data
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+          runAsGroup: 0
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+            add:
+            - CHOWN
+            - FOWNER
+        resources:
+          requests:
+            cpu: 10m
+            memory: 16Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      containers:
+      - name: grafana
+        image: grafana/grafana:13.2.4
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 3000
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/grafana
+        - name: provisioning
+          mountPath: /etc/grafana/provisioning/datasources/ia2.yml
+          subPath: datasource.yml
+          readOnly: true
+        - name: provisioning
+          mountPath: /etc/grafana/provisioning/dashboards/ia2.yml
+          subPath: dashboards.yml
+          readOnly: true
+        - name: dashboard
+          mountPath: /var/lib/grafana/dashboards
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        startupProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          periodSeconds: 5
+          failureThreshold: 90
+          timeoutSeconds: 3
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          periodSeconds: 5
+          timeoutSeconds: 3
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: http
+          periodSeconds: 15
+          timeoutSeconds: 3
+          failureThreshold: 5
+        env:
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              name: ia2-grafana-admin
+              key: admin-user
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ia2-grafana-admin
+              key: admin-password
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: 'false'
+        - name: GF_ANALYTICS_REPORTING_ENABLED
+          value: 'false'
+        - name: GF_ANALYTICS_CHECK_FOR_UPDATES
+          value: 'false'
+        - name: GF_LOG_MODE
+          value: console
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: grafana-data
+      - name: provisioning
+        configMap:
+          name: ia2-grafana-provisioning
+      - name: dashboard
+        configMap:
+          name: ia2-grafana-dashboard
+      - name: tmp
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: rewriter-ia2
+  labels:
+    app.kubernetes.io/part-of: rewriter-ia2-monitoring
+    app: grafana
+spec:
+  type: ClusterIP
+  selector:
+    app: grafana
+  ports:
+  - name: http
+    port: 3000
+    targetPort: http
