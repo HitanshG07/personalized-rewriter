@@ -94,3 +94,75 @@ def chat(
                 resp = client.post(OPENROUTER_URL, json=payload, headers={"Authorization": f"Bearer {key}"})
             except httpx.TimeoutException:
                 reason, retry = "timeout", True
+            except httpx.HTTPError:
+                reason, retry = "upstream_error", True
+            else:
+                elapsed = time.perf_counter() - start
+                if resp.status_code == 200:
+                    try:
+                        result = _parse(resp, elapsed)
+                    except LLMError as e:  # _parse already counted the failure
+                        reason = e.reason
+                        if (reason == "upstream_error" or retry_invalid) and attempt < attempts - 1:
+                            continue
+                        raise
+                    metrics.LLM_LATENCY.observe(elapsed)
+                    return result
+                if resp.status_code == 429:
+                    reason, retry = "rate_limited", True
+                elif resp.status_code in (401, 402, 403):
+                    reason, retry = "auth", False
+                else:
+                    reason, retry = "upstream_error", resp.status_code >= 500
+            metrics.OPENROUTER_FAILURES.labels(reason).inc()
+            if not retry:
+                break
+    raise LLMError(reason)
+
+
+def _parse(resp: httpx.Response, elapsed: float) -> LLMResult:
+    try:
+        body = resp.json()
+    except ValueError:
+        body = {}
+    if isinstance(body, dict) and body.get("error"):  # OpenRouter can report upstream errors inside a 200
+        metrics.OPENROUTER_FAILURES.labels("upstream_error").inc()
+        raise LLMError("upstream_error")
+    try:
+        text = body["choices"][0]["message"]["content"]
+    except (KeyError, IndexError, TypeError):
+        text = None
+    if not isinstance(text, str) or not text.strip():
+        metrics.OPENROUTER_FAILURES.labels("invalid_response").inc()
+        raise LLMError("invalid_response")
+
+    usage = body.get("usage") or {}
+    for kind in ("prompt", "completion"):
+        if isinstance(usage.get(f"{kind}_tokens"), int):
+            metrics.OPENROUTER_TOKENS.labels(kind).inc(usage[f"{kind}_tokens"])
+    return LLMResult(
+        text=text.strip(),
+        model=body.get("model", ""),
+        provider=body.get("provider"),
+        latency_ms=round(elapsed * 1000),
+        prompt_tokens=usage.get("prompt_tokens"),
+        completion_tokens=usage.get("completion_tokens"),
+    )
+
+
+def rewrite(sample: str, notes: str) -> tuple[LLMResult, str]:
+    """Rewrite notes in the sample's style using the runtime configuration. Returns (result, prompt_version)."""
+    prompt_version = os.getenv("PROMPT_VERSION", "v1")
+    if prompt_version not in PROMPTS:
+        raise LLMError("not_configured")
+    fallbacks = [m.strip() for m in os.getenv("OPENROUTER_FALLBACK_MODELS", "").split(",") if m.strip()]
+    result = chat(
+        build_messages(sample, notes, prompt_version),
+        model=os.getenv("OPENROUTER_MODEL", ""),
+        temperature=float(os.getenv("TEMPERATURE", "0.7")),
+        max_tokens=int(os.getenv("MAX_OUTPUT_TOKENS", "400")),
+        fallback_models=fallbacks,
+        timeout_s=float(os.getenv("OPENROUTER_TIMEOUT_S", "30")),
+        extra_body={"reasoning": {"enabled": False}},
+    )
+    return result, prompt_version
