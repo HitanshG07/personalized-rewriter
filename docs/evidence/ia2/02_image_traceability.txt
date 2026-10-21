@@ -1,0 +1,2 @@
+﻿image: hitansh07/personalized-rewriter:1c1a0203a10a9a7297623c59656a5ee97402bc41
+git-sha annotation: 1c1a0203a10a9a7297623c59656a5ee97402bc41

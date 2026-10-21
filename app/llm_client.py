@@ -8,6 +8,11 @@ import httpx
 from app import metrics
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+PROVIDERS = {  # name -> (chat-completions URL, API-key env var); all OpenAI-compatible
+    "openrouter": (OPENROUTER_URL, "OPENROUTER_API_KEY"),
+    "groq": ("https://api.groq.com/openai/v1/chat/completions", "GROQ_API_KEY"),
+    "google": ("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", "GOOGLE_API_KEY"),
+}
 RETRY_DELAY_S = 1.0
 TRANSPORT: httpx.BaseTransport | None = None  # tests swap in httpx.MockTransport; None = real network
 
@@ -67,6 +72,7 @@ def chat(
     retry_delay_s: float | None = None,
     extra_body: dict | None = None,
     retry_invalid: bool = False,
+    provider: str = "openrouter",
 ) -> LLMResult:
     """Chat completion with timeout, retries on timeout/429/5xx (linear backoff), and response validation.
 
@@ -74,12 +80,13 @@ def chat(
     An error object inside an HTTP 200 body is treated as a retryable upstream error.
     """
     delay = RETRY_DELAY_S if retry_delay_s is None else retry_delay_s
-    key = os.getenv("OPENROUTER_API_KEY")
+    url, key_env = PROVIDERS[provider]
+    key = os.getenv(key_env)
     if not key or not model:
         raise LLMError("not_configured")
 
     payload = {"model": model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens}
-    if fallback_models:  # disabled during formal evaluation/benchmarking (PROJECT_PLAN §4)
+    if fallback_models and provider == "openrouter":  # disabled during formal evaluation/benchmarking (PROJECT_PLAN §4)
         payload["models"] = [model, *fallback_models]
     payload.update(extra_body or {})
 
@@ -91,7 +98,7 @@ def chat(
             metrics.OPENROUTER_REQUESTS.inc()
             start = time.perf_counter()
             try:
-                resp = client.post(OPENROUTER_URL, json=payload, headers={"Authorization": f"Bearer {key}"})
+                resp = client.post(url, json=payload, headers={"Authorization": f"Bearer {key}"})
             except httpx.TimeoutException:
                 reason, retry = "timeout", True
             except httpx.HTTPError:

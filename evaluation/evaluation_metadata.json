@@ -1,0 +1,40 @@
+{
+  "prompt_v1": {
+    "run_id": "prompt_v1",
+    "round": 1,
+    "model_id": "minimax/minimax-m3.1-flash:free",
+    "prompt_version": "v1",
+    "temperature": 0.7,
+    "max_output_tokens": 1000,
+    "fallback_models": [],
+    "n_samples": 20,
+    "inputs_sha256": "1349e131d83daac0c3b6cc1774d085dc8ca7702de0a3f99b747bd5e286a76535",
+    "code_commit": "1c1a020",
+    "evaluation_started": "2026-10-22T01:03:14+05:30",
+    "evaluation_finished": "2026-10-22T01:05:16+05:30",
+    "calls_ok": 20,
+    "model_mismatches": 0,
+    "model_version": [
+      "minimax/minimax-m3.1-flash:free"
+    ]
+  },
+  "prompt_v2": {
+    "run_id": "prompt_v2",
+    "round": 1,
+    "model_id": "minimax/minimax-m3.1-flash:free",
+    "prompt_version": "v2",
+    "temperature": 0.7,
+    "max_output_tokens": 1000,
+    "fallback_models": [],
+    "n_samples": 20,
+    "inputs_sha256": "1349e131d83daac0c3b6cc1774d085dc8ca7702de0a3f99b747bd5e286a76535",
+    "code_commit": "f419dcb",
+    "evaluation_started": "2026-10-22T01:07:21+05:30",
+    "evaluation_finished": "2026-10-22T01:09:27+05:30",
+    "calls_ok": 20,
+    "model_mismatches": 0,
+    "model_version": [
+      "minimax/minimax-m3.1-flash:free"
+    ]
+  }
+}
