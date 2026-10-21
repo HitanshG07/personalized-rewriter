@@ -1,0 +1,4 @@
+﻿prometheus                                up
+rewriter   rewriter-76bc6cddbd-nhwvp      up
+rewriter   rewriter-76bc6cddbd-z8n2p      up
+rewriter   rewriter-76bc6cddbd-hjcml      up

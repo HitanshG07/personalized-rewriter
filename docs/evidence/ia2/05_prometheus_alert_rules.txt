@@ -1,0 +1,4 @@
+﻿RewriterPodDown          state=inactive  health=ok
+RewriterHighErrorRate    state=inactive  health=ok
+OpenRouterFailing        state=inactive  health=ok
+RewriterSlowResponses    state=inactive  health=ok

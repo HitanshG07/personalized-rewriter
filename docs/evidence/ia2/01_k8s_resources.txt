@@ -1,0 +1,21 @@
+﻿NAME                         READY   UP-TO-DATE   AVAILABLE   AGE     CONTAINERS   IMAGES                                                                     SELECTOR
+deployment.apps/grafana      1/1     1            1           9m46s   grafana      grafana/grafana:13.2.4                                                     app=grafana
+deployment.apps/prometheus   1/1     1            1           9m46s   prometheus   prom/prometheus:v3.13.5                                                    app=prometheus
+deployment.apps/rewriter     3/3     3            3           10m     rewriter     hitansh07/personalized-rewriter:1c1a0203a10a9a7297623c59656a5ee97402bc41   app=rewriter
+
+NAME                              READY   STATUS    RESTARTS   AGE     IP            NODE                    NOMINATED NODE   READINESS GATES
+pod/grafana-588ff47766-pqvpr      1/1     Running   0          5m22s   10.244.0.18   desktop-control-plane   <none>           <none>
+pod/prometheus-6c57479b6c-p4jmj   1/1     Running   0          5m22s   10.244.0.17   desktop-control-plane   <none>           <none>
+pod/rewriter-76bc6cddbd-hjcml     1/1     Running   0          43s     10.244.0.19   desktop-control-plane   <none>           <none>
+pod/rewriter-76bc6cddbd-nhwvp     1/1     Running   0          9m56s   10.244.0.10   desktop-control-plane   <none>           <none>
+pod/rewriter-76bc6cddbd-z8n2p     1/1     Running   0          9m51s   10.244.0.11   desktop-control-plane   <none>           <none>
+
+NAME                 TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE     SELECTOR
+service/grafana      ClusterIP      10.96.206.143   <none>        3000/TCP         9m46s   app=grafana
+service/prometheus   ClusterIP      10.96.231.51    <none>        9090/TCP         9m46s   app=prometheus
+service/rewriter     LoadBalancer   10.96.202.68    172.23.0.5    8002:30827/TCP   10m     app=rewriter
+
+NAME                                    STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE     VOLUMEMODE
+persistentvolumeclaim/grafana-data      Bound    pvc-338b3f6e-dccf-4218-96e7-a1cd5c4dac63   1Gi        RWO            standard       <unset>                 9m46s   Filesystem
+persistentvolumeclaim/prometheus-data   Bound    pvc-b25f994a-2a17-43db-8f3e-a2cb6adc647e   1Gi        RWO            standard       <unset>                 9m46s   Filesystem
+persistentvolumeclaim/rewriter-data     Bound    pvc-71415378-5837-41a5-9b72-5fea1ee0dd39   1Gi        RWO            standard       <unset>                 10m     Filesystem

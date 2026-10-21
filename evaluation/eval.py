@@ -30,10 +30,22 @@ RESULTS = HERE / "results"
 META = HERE / "evaluation_metadata.json"
 SUMMARY = HERE / "evaluation_summary.csv"
 ROUNDS = {1: ["prompt_v1", "prompt_v2", "prompt_v3"], 2: ["model_A", "model_B", "model_C"]}
+# A spec is "model" (OpenRouter) or "groq:model" / "google:model" (second free provider, see app.llm_client.PROVIDERS).
 CANDIDATE_MODELS = {"A": "minimax/minimax-m3.1-flash:free", "B": "google/gemma-4-31b-it:free",
                     "C": "nvidia/nemotron-3.5-lightning:free"}
 TEMPERATURE, MAX_TOKENS = 0.7, 1000  # same as the deployed app (k8s/app-config.env)
 SCORE_KEYS = ("quality", "meaning", "tone")
+
+
+def split_model(spec: str) -> tuple[str, str]:
+    """'groq:llama-3.3-70b-versatile' -> ('groq', 'llama-3.3-70b-versatile'); plain spec -> ('openrouter', spec)."""
+    head, sep, rest = spec.partition(":")
+    return (head, rest) if sep and head in ("groq", "google") else ("openrouter", spec)
+
+
+def same_model(returned: str, requested: str) -> bool:
+    returned = returned.removeprefix("models/")
+    return returned == requested or returned.endswith(requested) or requested.endswith(returned)
 
 
 def now() -> str:
@@ -64,11 +76,12 @@ def run(label: str, model: str, prompt: str, round_no: int, delay: float, chat=N
     from app.llm_client import LLMError, build_messages
     if chat is None:
         from app.llm_client import chat
+    provider, model_id = split_model(model)
     items = inputs()
     out = load(results_path(label), {})
     meta = load(META, {})
     m = meta.setdefault(label, {})
-    m.update({"run_id": label, "round": round_no, "model_id": model, "prompt_version": prompt,
+    m.update({"run_id": label, "round": round_no, "model_id": model_id, "provider": provider, "prompt_version": prompt,
               "temperature": TEMPERATURE, "max_output_tokens": MAX_TOKENS, "fallback_models": [],
               "n_samples": len(items), "inputs_sha256": hashlib.sha256(INPUTS.read_bytes()).hexdigest(),
               "code_commit": subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT, capture_output=True, text=True).stdout.strip()})
@@ -81,8 +94,8 @@ def run(label: str, model: str, prompt: str, round_no: int, delay: float, chat=N
         if sid in out:
             continue  # resumable: never re-call a saved item
         try:
-            r = chat(build_messages(it["writing_sample"], it["rough_notes"], prompt), model=model,
-                     temperature=TEMPERATURE, max_tokens=MAX_TOKENS, fallback_models=None, attempts=1, timeout_s=90)
+            r = chat(build_messages(it["writing_sample"], it["rough_notes"], prompt), model=model_id,
+                     temperature=TEMPERATURE, max_tokens=MAX_TOKENS, fallback_models=None, attempts=1, timeout_s=90, provider=provider)
         except LLMError as e:
             print(f"  {sid}: {e.reason}")
             if e.reason in ("rate_limited", "auth", "not_configured"):
@@ -90,8 +103,8 @@ def run(label: str, model: str, prompt: str, round_no: int, delay: float, chat=N
                 break  # quota or setup problem: stop now, resume later
             sleep(delay)
             continue
-        out[sid] = {"sample_id": sid, "label": label, "prompt_version": prompt, "model_requested": model,
-                    "model_returned": r.model, "provider": r.provider, "model_mismatch": bool(r.model) and r.model != model,
+        out[sid] = {"sample_id": sid, "label": label, "prompt_version": prompt, "model_requested": model_id, "provider_name": provider,
+                    "model_returned": r.model, "provider": r.provider, "model_mismatch": bool(r.model) and not same_model(r.model, model_id),
                     "output": r.text, "latency_ms": r.latency_ms, "prompt_tokens": r.prompt_tokens,
                     "completion_tokens": r.completion_tokens, "created_at": now()}
         save(results_path(label), out)  # saved the moment it returns
@@ -200,9 +213,19 @@ def summary() -> None:
 
 def models() -> None:
     import httpx
-    ids = {m["id"] for m in httpx.get("https://openrouter.ai/api/v1/models", timeout=30).json()["data"]}
-    for k, m in CANDIDATE_MODELS.items():
-        print(f"model {k}: {m:45} {'available' if m in ids else 'NOT AVAILABLE'}")
+    from dotenv import load_dotenv
+    from app.llm_client import PROVIDERS
+    load_dotenv(ROOT / ".env")
+    ids = None
+    for k, spec in CANDIDATE_MODELS.items():
+        provider, m = split_model(spec)
+        key_set = bool(os.getenv(PROVIDERS[provider][1]))
+        if provider != "openrouter":
+            print(f"model {k}: {spec:45} provider {provider}, provider key set: {key_set}")
+            continue
+        if ids is None:
+            ids = {x["id"] for x in httpx.get("https://openrouter.ai/api/v1/models", timeout=30).json()["data"]}
+        print(f"model {k}: {spec:45} provider {provider}, provider key set: {key_set}, {'available' if m in ids else 'NOT AVAILABLE'}")
 
 
 def main(argv=None) -> int:
@@ -220,8 +243,10 @@ def main(argv=None) -> int:
     if a.cmd == "run":
         from dotenv import load_dotenv
         load_dotenv(ROOT / ".env")
-        if not os.getenv("OPENROUTER_API_KEY"):
-            print("OPENROUTER_API_KEY missing in .env"); return 1
+        from app.llm_client import PROVIDERS
+        key_env = PROVIDERS[split_model(a.model)[0]][1]
+        if not os.getenv(key_env):
+            print(f"{key_env} missing in .env"); return 1
         return run(a.label, a.model, a.prompt, a.round, a.delay)
     {"models": models, "summary": summary}.get(a.cmd, lambda: None)()
     if a.cmd == "copy":

@@ -1,0 +1,8 @@
+﻿NAME                        READY   STATUS    RESTARTS   AGE
+rewriter-76bc6cddbd-kcpr5   1/1     Running   0          7m25s
+rewriter-76bc6cddbd-nhwvp   1/1     Running   0          9m12s
+rewriter-76bc6cddbd-z8n2p   1/1     Running   0          9m7s
+NAME                        READY   STATUS    RESTARTS   AGE
+rewriter-76bc6cddbd-hjcml   1/1     Running   0          7s
+rewriter-76bc6cddbd-nhwvp   1/1     Running   0          9m20s
+rewriter-76bc6cddbd-z8n2p   1/1     Running   0          9m15s
